@@ -59,6 +59,11 @@ type OtpErrorCode =
   | 'SMTP_CONFIG'
   | 'OTP_DATABASE'
   | 'SMTP_DELIVERY'
+  | 'SMTP_AUTH'
+  | 'SMTP_NETWORK'
+  | 'SMTP_TLS'
+  | 'EMAIL_API_CONFIG'
+  | 'EMAIL_API_DELIVERY'
   | 'OTP_INTERNAL';
 
 class OtpSendError extends Error {
@@ -92,6 +97,19 @@ function checkServerConfig() {
     );
   }
 
+  // Prefer HTTPS mail delivery when explicitly configured.
+  // SMTP remains available for existing installations.
+  if (process.env.RESEND_API_KEY?.trim()) {
+    const from = process.env.RESEND_FROM_EMAIL?.trim();
+    if (!from) {
+      throw new OtpSendError(
+        'EMAIL_API_CONFIG',
+        'Thiếu RESEND_FROM_EMAIL trên Vercel.'
+      );
+    }
+    return { provider: 'resend' as const, from };
+  }
+
   const host = process.env.SMTP_HOST?.trim() || 'smtp.gmail.com';
   const port = Number(process.env.SMTP_PORT || 465);
   const user = process.env.SMTP_USER?.trim();
@@ -107,7 +125,127 @@ function checkServerConfig() {
     );
   }
 
-  return { host, port, user, pass, from };
+  return { provider: 'smtp' as const, host, port, user, pass, from };
+}
+
+function classifySmtpFailure(error: unknown): OtpSendError {
+  const details = error && typeof error === 'object'
+    ? error as { code?: string; responseCode?: number; command?: string }
+    : {};
+  const code = details.code ?? '';
+  const responseCode = details.responseCode;
+
+  if (code === 'EAUTH' || responseCode === 534 || responseCode === 535) {
+    return new OtpSendError(
+      'SMTP_AUTH',
+      'Gmail từ chối đăng nhập SMTP. Kiểm tra SMTP_USER và Gmail App Password.'
+    );
+  }
+
+  if (['ETIMEDOUT', 'ESOCKET', 'ECONNECTION', 'ECONNREFUSED', 'ENETUNREACH', 'EHOSTUNREACH'].includes(code)) {
+    return new OtpSendError(
+      'SMTP_NETWORK',
+      'Máy chủ Vercel không kết nối được SMTP. Nên chuyển sang email HTTPS API.'
+    );
+  }
+
+  if (['ETLS', 'CERT_HAS_EXPIRED', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'DEPTH_ZERO_SELF_SIGNED_CERT'].includes(code)) {
+    return new OtpSendError(
+      'SMTP_TLS',
+      'Kết nối TLS tới máy chủ SMTP không hợp lệ.'
+    );
+  }
+
+  return new OtpSendError(
+    'SMTP_DELIVERY',
+    'Gmail SMTP từ chối gửi email. Kiểm tra địa chỉ người gửi hoặc cấu hình nhà cung cấp.'
+  );
+}
+
+async function deliverOtp(
+  config: ReturnType<typeof checkServerConfig>,
+  recipient: string,
+  code: string
+) {
+  const subject = 'BINGSU TEAM — Mã xác thực Admin';
+  const message = [
+    'BINGSU TEAM — XÁC THỰC QUẢN TRỊ',
+    '',
+    `Mã OTP của bạn: ${code}`,
+    '',
+    'Mã có hiệu lực trong 5 phút.',
+    'Không chia sẻ mã OTP với bất kỳ ai.',
+    '',
+    'Nếu bạn không yêu cầu mã này, hãy bỏ qua email.',
+  ].join('\\n');
+
+  if (config.provider === 'resend') {
+    let response: Response;
+    try {
+      response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: config.from,
+          to: [recipient],
+          subject,
+          text: message,
+        }),
+        signal: AbortSignal.timeout(12000),
+        cache: 'no-store',
+      });
+    } catch {
+      throw new OtpSendError(
+        'EMAIL_API_DELIVERY',
+        'Không kết nối được dịch vụ gửi email HTTPS.'
+      );
+    }
+
+    if (!response.ok) {
+      // Never expose provider response bodies, credentials or email addresses.
+      console.error('Admin OTP email API failed:', { status: response.status });
+      throw new OtpSendError(
+        'EMAIL_API_DELIVERY',
+        response.status === 403 || response.status === 422
+          ? 'Dịch vụ email từ chối địa chỉ gửi. Kiểm tra domain đã xác minh.'
+          : response.status === 401
+            ? 'API key của dịch vụ gửi email không hợp lệ.'
+            : 'Dịch vụ gửi email HTTPS trả về lỗi.'
+      );
+    }
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.port === 465,
+    auth: { user: config.user, pass: config.pass },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
+
+  try {
+    await transporter.sendMail({
+      from: config.from,
+      to: recipient,
+      subject,
+      text: message,
+    });
+  } catch (error) {
+    const classified = classifySmtpFailure(error);
+    // Log only machine-readable categories, not raw SMTP errors.
+    console.error('Admin OTP SMTP failure:', {
+      category: classified.code,
+    });
+    throw classified;
+  } finally {
+    transporter.close();
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -198,41 +336,18 @@ export async function POST(request: NextRequest) {
       throw new OtpSendError('OTP_DATABASE', 'Không thể lưu mã OTP vào Supabase.');
     }
 
-    const transporter = nodemailer.createTransport({
-      host: smtp.host,
-      port: smtp.port,
-      secure: smtp.port === 465,
-      auth: {
-        user: smtp.user,
-        pass: smtp.pass,
-      },
-    });
-
     try {
-      await transporter.sendMail({
-        from: smtp.from,
-        to: identity.email,
-        subject: 'BINGSU TEAM — Mã xác thực Admin',
-        text: [
-          'BINGSU TEAM — XÁC THỰC QUẢN TRỊ',
-          '',
-          `Mã OTP của bạn: ${code}`,
-          '',
-          'Mã có hiệu lực trong 5 phút.',
-          'Không chia sẻ mã OTP với bất kỳ ai.',
-          '',
-          'Nếu bạn không yêu cầu mã này,',
-          'hãy bỏ qua email.',
-        ].join('\n'),
-      });
+      await deliverOtp(smtp, identity.email, code);
     } catch (mailError) {
-      await db
+      // A failed delivery must not consume an OTP attempt.
+      const { error: cleanupError } = await db
         .from('admin_otp_challenges')
         .delete()
         .eq('id', challenge.id);
-
-      console.error('Admin OTP SMTP delivery failed:', mailError);
-      throw new OtpSendError('SMTP_DELIVERY', 'Không gửi được email OTP qua SMTP.');
+      if (cleanupError) {
+        console.error('Admin OTP cleanup failed');
+      }
+      throw mailError;
     }
 
     return NextResponse.json(
