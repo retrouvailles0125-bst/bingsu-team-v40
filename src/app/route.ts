@@ -22,6 +22,20 @@ export async function GET() {
 
   html = html.replace(accountButton, accountLink);
 
+  // Bridge the legacy V40 UI to the same Supabase session used by /login.
+  // Never use the old localStorage password database for authentication.
+  const replacements: Array<[string, string]> = [
+    ["let email=sessionStorage.getItem(USER)||''", "let email=''"],
+    ["if(!email){$('#app').innerHTML=loginBox();bindLogin();return}", "if(!email){window.location.assign('/login');return}"],
+    ["$('#logout').onclick=()=>{email='';sessionStorage.removeItem(USER);render()};",
+      "$('#logout').onclick=()=>{window.location.assign('/logout')};"],
+    ["});render();\\n})();", "});(async()=>{try{const response=await fetch('/api/auth/session',{credentials:'same-origin',cache:'no-store'});const session=await response.json();if(session.authenticated&&session.email){email=session.email.toLowerCase();if(session.username){db.userProfiles[email]={...(db.userProfiles[email]||{}),username:session.username}}}else{email='';}}catch(error){console.error('Unable to load Supabase session',error);email='';}render()})();\\n})();"],
+  ];
+  for (const [from, to] of replacements) {
+    if (!html.includes(from)) throw new Error('Missing V40 auth integration marker: ' + from.slice(0, 45));
+    html = html.replace(from, to);
+  }
+
   const navigationStyle = `
     <style>
       .bst-account-nav {
