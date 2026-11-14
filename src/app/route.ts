@@ -182,6 +182,29 @@ export async function GET() {
           window.location.assign('/tracking');
           return;
         }
+        // The original project detail view uses #projectDonate, not data-project.
+        // Intercept before the legacy onclick saves a donation to localStorage.
+        var detailDonate = event.target.closest('#projectDonate');
+        if (detailDonate) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          var projectTitle = document.querySelector('.project-detail h2');
+          var projectName = projectTitle ? projectTitle.textContent.trim() : '';
+          fetch('/api/projects/open', { credentials: 'same-origin', cache: 'no-store' })
+            .then(function(response) {
+              if (!response.ok) throw new Error('Không tải được Project');
+              return response.json();
+            })
+            .then(function(payload) {
+              var match = (payload.projects || []).find(function(project) {
+                return project.is_open && project.name.toLowerCase() === projectName.toLowerCase();
+              });
+              if (!match) throw new Error('Project không còn mở Donate trên Supabase');
+              window.location.assign('/donate?project=' + encodeURIComponent(match.id));
+            })
+            .catch(function(error) { alert(error.message || 'Không thể mở Donate'); });
+          return;
+        }
         var button = event.target.closest('[data-project]');
         if (!button) return;
         event.preventDefault();
