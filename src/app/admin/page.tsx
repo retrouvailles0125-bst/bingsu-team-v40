@@ -1,5 +1,6 @@
 
 import { supabaseServer } from '@/lib/supabase';
+import { requireAdminAccess } from '@/lib/admin-security';
 import AdminDonateDashboard from './AdminDonateDashboard';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,19 @@ export default async function AdminPage() {
       <main className="page">
         <section className="panel">
           Bạn không có quyền truy cập khu vực BST.
+        </section>
+      </main>
+    );
+  }
+
+  const access = await requireAdminAccess();
+
+  if (!access.ok) {
+    return (
+      <main className="page">
+        <section className="panel">
+          <h2>BINGSU TEAM — XÁC THỰC QUẢN TRỊ</h2>
+          <p>{access.error}</p>
         </section>
       </main>
     );

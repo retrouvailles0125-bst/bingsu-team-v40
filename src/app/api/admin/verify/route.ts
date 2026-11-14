@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/supabase';
+import { requireAdminAccess } from '@/lib/admin-security';
 
 const schema = z.object({
   donation_id: z.string().uuid(),
@@ -15,6 +16,14 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: 'Chưa đăng nhập' },
       { status: 401 }
+    );
+  }
+
+  const access = await requireAdminAccess();
+  if (!access.ok) {
+    return NextResponse.json(
+      { error: access.error },
+      { status: access.status }
     );
   }
 
