@@ -101,9 +101,24 @@ export async function GET() {
           tab = 'account';
         }
 
+        try {
+          const projectsResponse = await fetch('/api/projects/open', {
+            credentials: 'same-origin',
+            cache: 'no-store'
+          });
+          const projectsPayload = await projectsResponse.json();
+          if (!projectsResponse.ok) throw new Error(projectsPayload.error || 'Không tải được Project');
+          db.projects = projectsPayload.projects.map(function(p) {
+            return {id:p.id,name:p.name,description:p.description,open:p.is_open};
+          });
+          window.__bstBackendProjects = true;
+        } catch (projectError) {
+          console.error('Lỗi đồng bộ Project Supabase:', projectError);
+          db.projects = [];
+        }
         render();
       })();
-      })();`,
+      })();
     ],
   ];
 
@@ -156,6 +171,20 @@ export async function GET() {
     </script>
   `;
 
+  // Nút Donate trên giao diện V40 đi thẳng tới form Supabase, không dùng localStorage.
+  const donateBridgeScript = `
+    <script>
+      document.addEventListener('click', function(event) {
+        var button = event.target.closest('[data-project]');
+        if (!button) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        var projectId = button.getAttribute('data-project');
+        if (projectId) window.location.assign('/donate?project=' + encodeURIComponent(projectId));
+      }, true);
+    </script>
+  `;
+
   const navigationStyle = `
     <style>
       #bst-admin-nav[hidden] {
@@ -179,7 +208,7 @@ export async function GET() {
 
   html = html.replace(
     '</body>',
-    `${adminNavigationScript}</body>`
+    `${adminNavigationScript}${donateBridgeScript}</body>`
   );
 
   return new Response(html, {
