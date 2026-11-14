@@ -118,7 +118,7 @@ export async function GET() {
         }
         render();
       })();
-      })();
+      })();`,
     ],
   ];
 
