@@ -175,6 +175,13 @@ export async function GET() {
   const donateBridgeScript = `
     <script>
       document.addEventListener('click', function(event) {
+        var trackingButton = event.target.closest('[data-tab="tracking"], #toTracking');
+        if (trackingButton) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          window.location.assign('/tracking');
+          return;
+        }
         var button = event.target.closest('[data-project]');
         if (!button) return;
         event.preventDefault();
