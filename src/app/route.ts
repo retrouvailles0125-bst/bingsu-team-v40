@@ -18,23 +18,18 @@ export async function GET() {
     '<button data-tab="admin">BINGSU TEAM</button>';
 
   if (!html.includes(accountButton)) {
-    throw new Error('Không tìm thấy nút tài khoản V40.');
+    throw new Error('Không tìm thấy nút Account V40.');
   }
 
   if (!html.includes(adminButton)) {
     throw new Error('Không tìm thấy nút Admin V40.');
   }
 
-  html = html.replace(
-    accountButton,
-    '<a href="/login" class="bst-account-nav">TÀI KHOẢN CỦA TÔI</a>'
-  );
-
-  // Hidden by default. Supabase determines visibility.
-  // This is navigation only, not an authorization boundary.
+  // Giữ nguyên nút Account và hệ thống tab của V40.
+  // Nút Admin sử dụng button gốc để kế thừa CSS V40.
   html = html.replace(
     adminButton,
-    '<a href="/admin" id="bst-admin-nav" class="bst-account-nav" hidden>BINGSU TEAM</a>'
+    '<button type="button" id="bst-admin-nav" data-tab="admin-link" hidden>BINGSU TEAM</button>'
   );
 
   const replacements: Array<[string, string]> = [
@@ -53,6 +48,10 @@ export async function GET() {
     [
       "});render();\n})();",
       `});(async()=>{
+        const requestedTab = new URLSearchParams(
+          window.location.search
+        ).get('tab');
+
         try {
           const response = await fetch('/api/auth/session', {
             credentials: 'same-origin',
@@ -60,7 +59,7 @@ export async function GET() {
           });
 
           if (!response.ok) {
-            throw new Error('Session request failed');
+            throw new Error('Không thể kiểm tra session');
           }
 
           const session = await response.json();
@@ -75,17 +74,31 @@ export async function GET() {
               };
             }
 
-            const adminNav = document.getElementById('bst-admin-nav');
+            const adminNav = document.getElementById(
+              'bst-admin-nav'
+            );
 
-            if (adminNav && session.isAdmin === true) {
-              adminNav.hidden = false;
+            if (adminNav) {
+              adminNav.hidden = session.isAdmin !== true;
             }
           } else {
             email = '';
           }
         } catch (error) {
-          console.error('Unable to load Supabase session', error);
+          console.error(
+            'Không thể tải Supabase session:',
+            error
+          );
           email = '';
+        }
+
+        if (requestedTab === 'account') {
+          if (!email) {
+            window.location.replace('/login');
+            return;
+          }
+
+          tab = 'account';
         }
 
         render();
@@ -97,41 +110,76 @@ export async function GET() {
   for (const [from, to] of replacements) {
     if (!html.includes(from)) {
       throw new Error(
-        'Missing V40 integration marker: ' +
-        from.slice(0, 45)
+        'Không tìm thấy marker V40: ' +
+        from.slice(0, 60)
       );
     }
 
-    html = html.split(from).join(to);
+    html = html.replace(from, to);
   }
+
+  // V40 gốc gán onclick cho toàn bộ nav button.
+  // Vì vậy phải gắn handler Admin sau handler gốc
+  // để tránh mở trang Admin demo của V40.
+  const adminNavigationScript = `
+    <script>
+      (function () {
+        function bindAdminNavigation() {
+          const button = document.getElementById(
+            'bst-admin-nav'
+          );
+
+          if (!button) return;
+
+          button.addEventListener(
+            'click',
+            function (event) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+
+              window.location.assign('/admin');
+            },
+            true
+          );
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener(
+            'DOMContentLoaded',
+            bindAdminNavigation,
+            { once: true }
+          );
+        } else {
+          bindAdminNavigation();
+        }
+      })();
+    </script>
+  `;
 
   const navigationStyle = `
     <style>
-      .bst-account-nav {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        color: inherit;
-        font: inherit;
-        cursor: pointer;
-        border-radius: 10px;
-        padding: 10px 14px;
-      }
-
-      .bst-account-nav:hover {
-        background: #e1258918;
-      }
-
       #bst-admin-nav[hidden] {
         display: none !important;
       }
     </style>
   `;
 
+  if (!html.includes('</head>')) {
+    throw new Error('HTML V40 không có thẻ đóng head.');
+  }
+
+  if (!html.includes('</body>')) {
+    throw new Error('HTML V40 không có thẻ đóng body.');
+  }
+
   html = html.replace(
     '</head>',
     `${navigationStyle}</head>`
+  );
+
+  html = html.replace(
+    '</body>',
+    `${adminNavigationScript}</body>`
   );
 
   return new Response(html, {

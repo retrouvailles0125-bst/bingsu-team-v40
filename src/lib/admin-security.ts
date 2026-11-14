@@ -1,5 +1,8 @@
 
-import { requireUser } from '@/lib/supabase';
+import {
+  getAdminIdentity,
+  isAdminOtpVerified,
+} from '@/lib/admin-otp';
 
 export type AdminAccessResult =
   | { ok: true; userId: string }
@@ -10,41 +13,31 @@ export type AdminAccessResult =
     };
 
 export async function requireAdminAccess(): Promise<AdminAccessResult> {
-  const { supabase, user } = await requireUser();
+  const identity = await getAdminIdentity();
 
-  if (!user) {
-    return {
-      ok: false,
-      status: 401,
-      error: 'Vui lòng đăng nhập.',
-    };
-  }
-
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('role,blocked')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  if (
-    error ||
-    !profile ||
-    profile.blocked ||
-    profile.role !== 'admin'
-  ) {
+  if (!identity) {
     return {
       ok: false,
       status: 403,
-      error: 'Tài khoản không có quyền Admin.',
+      error: 'Bạn cần đăng nhập bằng tài khoản Admin hợp lệ.',
     };
   }
 
-  // Fail closed:
-  // Until server-side OTP verification is implemented,
-  // nobody can pass the Admin security gate.
+  const verified = await isAdminOtpVerified(
+    identity.userId,
+    identity.sessionId
+  );
+
+  if (!verified) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'Cần xác thực OTP để truy cập Admin.',
+    };
+  }
+
   return {
-    ok: false,
-    status: 403,
-    error: 'Cần xác thực OTP để truy cập Admin.',
+    ok: true,
+    userId: identity.userId,
   };
 }

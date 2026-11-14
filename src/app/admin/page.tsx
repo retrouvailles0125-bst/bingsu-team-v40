@@ -2,8 +2,56 @@
 import { supabaseServer } from '@/lib/supabase';
 import { requireAdminAccess } from '@/lib/admin-security';
 import AdminDonateDashboard from './AdminDonateDashboard';
+import AdminOtpForm from './AdminOtpForm';
 
 export const dynamic = 'force-dynamic';
+
+const adminModules = [
+  {
+    title: 'Quản lý tài khoản',
+    description: 'Tài khoản Kandee, chặn đăng nhập và thông báo.',
+  },
+  {
+    title: 'Cài đặt vòng xoay',
+    description: 'Tỷ lệ lượt quay và thời gian Gacha.',
+  },
+  {
+    title: 'Quản lý Project',
+    description: 'Thông tin, trạng thái và danh sách Project.',
+  },
+  {
+    title: 'Ngân hàng & QR Donate',
+    description: 'Tài khoản nhận Donate và ảnh QR.',
+  },
+  {
+    title: 'Tặng lượt quay',
+    description: 'Cấp lượt quay cho tài khoản Kandee.',
+  },
+  {
+    title: 'Xác suất Gacha',
+    description: 'Xác suất Normal, Gold và các độ hiếm.',
+  },
+  {
+    title: 'Quản lý quà',
+    description: 'Danh sách quà và tồn kho.',
+  },
+  {
+    title: 'Kết quả quay',
+    description: 'Lịch sử Gacha và xuất dữ liệu.',
+  },
+  {
+    title: 'Trade & Gift',
+    description: 'Theo dõi giao dịch Trade và tặng quà.',
+  },
+  {
+    title: 'Giao lưu & Thư gửi Trang',
+    description: 'Quản lý bài viết, thư và bộ lọc.',
+  },
+  {
+    title: 'Báo cáo Excel',
+    description: 'Xuất dữ liệu đối soát và báo cáo.',
+  },
+];
 
 export default async function AdminPage() {
   const db = await supabaseServer();
@@ -50,6 +98,7 @@ export default async function AdminPage() {
         <section className="panel">
           <h2>BINGSU TEAM — XÁC THỰC QUẢN TRỊ</h2>
           <p>{access.error}</p>
+          <AdminOtpForm />
         </section>
       </main>
     );
@@ -63,7 +112,6 @@ export default async function AdminPage() {
       )
       .order('created_at', { ascending: false })
       .limit(100),
-
     db
       .from('gacha_exchange_settings')
       .select('normal_rate,gold_rate,verify_wait_seconds')
@@ -74,6 +122,79 @@ export default async function AdminPage() {
   return (
     <main className="page">
       <section className="panel">
+        <h1 style={{ color: '#e12589' }}>
+          BINGSU TEAM — ADMIN V40
+        </h1>
+        <p className="muted">
+          Trung tâm quản trị BINGSU TEAM.
+        </p>
+
+        <h2>Danh mục quản trị</h2>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns:
+              'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: 12,
+            marginBottom: 28,
+          }}
+        >
+          <a
+            href="#donate-management"
+            style={{
+              display: 'block',
+              padding: 18,
+              border: '2px solid #e12589',
+              borderRadius: 14,
+              background: '#fff0f8',
+              color: '#a41464',
+              textDecoration: 'none',
+            }}
+          >
+            <strong>Donate Management</strong>
+            <p style={{ fontSize: 13 }}>
+              Xác minh Donate và quản lý phân bổ lượt.
+            </p>
+            <span style={{ fontSize: 12 }}>
+              Đã kết nối Supabase
+            </span>
+          </a>
+
+          {adminModules.map((module) => (
+            <div
+              key={module.title}
+              style={{
+                padding: 18,
+                border: '1px solid #f0c8df',
+                borderRadius: 14,
+                background: '#fff',
+              }}
+            >
+              <strong style={{ color: '#a41464' }}>
+                {module.title}
+              </strong>
+              <p style={{ fontSize: 13 }}>
+                {module.description}
+              </p>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: '#777',
+                }}
+              >
+                Chưa kết nối Supabase
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section
+        className="panel"
+        id="donate-management"
+        style={{ scrollMarginTop: 24 }}
+      >
         <h2>BINGSU TEAM — DONATE MANAGEMENT</h2>
         <p className="muted">
           Quản lý xác minh Donate và phân bổ lượt Gacha V40.4.
