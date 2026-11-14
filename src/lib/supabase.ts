@@ -5,7 +5,7 @@ export async function supabaseServer() {
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() { return cookieStore.getAll(); },
-      setAll(items) { try { items.forEach(({name,value,options}) => cookieStore.set(name,value,options)); } catch { /* read-only Server Component */ } }
+      setAll(items: { name: string; value: string; options?: import('@supabase/ssr').CookieOptions }[]) { try { items.forEach(({name,value,options}) => cookieStore.set(name,value,options)); } catch { /* read-only Server Component */ } }
     }
   });
 }
