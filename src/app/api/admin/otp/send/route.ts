@@ -53,6 +53,63 @@ function isAllowedOrigin(request: NextRequest): boolean {
   }
 }
 
+type OtpErrorCode =
+  | 'SUPABASE_ADMIN_CONFIG'
+  | 'OTP_SECRET_CONFIG'
+  | 'SMTP_CONFIG'
+  | 'OTP_DATABASE'
+  | 'SMTP_DELIVERY'
+  | 'OTP_INTERNAL';
+
+class OtpSendError extends Error {
+  constructor(
+    public readonly code: OtpErrorCode,
+    message: string,
+    public readonly status = 500
+  ) {
+    super(message);
+    this.name = 'OtpSendError';
+  }
+}
+
+function checkServerConfig() {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    !(
+      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+    )
+  ) {
+    throw new OtpSendError(
+      'SUPABASE_ADMIN_CONFIG',
+      'Thiếu cấu hình Supabase Admin trên máy chủ.'
+    );
+  }
+
+  if (!process.env.ADMIN_OTP_SECRET || process.env.ADMIN_OTP_SECRET.length < 32) {
+    throw new OtpSendError(
+      'OTP_SECRET_CONFIG',
+      'Thiếu hoặc sai cấu hình ADMIN_OTP_SECRET.'
+    );
+  }
+
+  const host = process.env.SMTP_HOST?.trim() || 'smtp.gmail.com';
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_APP_PASSWORD || process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM_EMAIL?.trim()
+    || process.env.SMTP_FROM?.trim()
+    || user;
+
+  if (!user || !pass || !from || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new OtpSendError(
+      'SMTP_CONFIG',
+      'Thiếu hoặc sai cấu hình SMTP trên máy chủ.'
+    );
+  }
+
+  return { host, port, user, pass, from };
+}
+
 export async function POST(request: NextRequest) {
   if (!isAllowedOrigin(request)) {
     return NextResponse.json(
@@ -71,6 +128,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const smtp = checkServerConfig();
     const db = adminDatabase();
 
     const oneHourAgo = new Date(
@@ -85,7 +143,9 @@ export async function POST(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(6);
 
-    if (recentError) throw recentError;
+    if (recentError) {
+      throw new OtpSendError('OTP_DATABASE', 'Không thể kiểm tra giới hạn OTP trong Supabase.');
+    }
 
     if ((recent?.length ?? 0) >= 5) {
       return NextResponse.json(
@@ -134,42 +194,23 @@ export async function POST(request: NextRequest) {
         .select('id')
         .single();
 
-    if (insertError) throw insertError;
-
-    // Accept both the current V40 names and the older SMTP names.
-    // This avoids breaking Production when the Vercel project still uses
-    // SMTP_PASS / SMTP_FROM from the earlier mail configuration.
-    const host = process.env.SMTP_HOST?.trim() || 'smtp.gmail.com';
-    const port = Number(process.env.SMTP_PORT || 465);
-    const user = process.env.SMTP_USER?.trim();
-    const pass = process.env.SMTP_APP_PASSWORD || process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM_EMAIL?.trim()
-      || process.env.SMTP_FROM?.trim()
-      || user;
-
-    if (!user || !pass || !from || !Number.isInteger(port) || port < 1 || port > 65535) {
-      console.error('Admin OTP SMTP configuration incomplete:', {
-        hasUser: Boolean(user),
-        hasPassword: Boolean(pass),
-        hasFrom: Boolean(from),
-        validPort: Number.isInteger(port) && port >= 1 && port <= 65535,
-      });
-      throw new Error('Thiếu hoặc sai cấu hình Gmail SMTP.');
+    if (insertError) {
+      throw new OtpSendError('OTP_DATABASE', 'Không thể lưu mã OTP vào Supabase.');
     }
 
     const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
+      host: smtp.host,
+      port: smtp.port,
+      secure: smtp.port === 465,
       auth: {
-        user,
-        pass,
+        user: smtp.user,
+        pass: smtp.pass,
       },
     });
 
     try {
       await transporter.sendMail({
-        from,
+        from: smtp.from,
         to: identity.email,
         subject: 'BINGSU TEAM — Mã xác thực Admin',
         text: [
@@ -190,7 +231,8 @@ export async function POST(request: NextRequest) {
         .delete()
         .eq('id', challenge.id);
 
-      throw mailError;
+      console.error('Admin OTP SMTP delivery failed:', mailError);
+      throw new OtpSendError('SMTP_DELIVERY', 'Không gửi được email OTP qua SMTP.');
     }
 
     return NextResponse.json(
@@ -206,14 +248,22 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('Admin OTP send error:', error);
+    const known = error instanceof OtpSendError ? error : null;
+    console.error('Admin OTP send failure:', {
+      code: known?.code ?? 'OTP_INTERNAL',
+      // Keep detailed server errors in server logs, never expose secrets.
+      cause: known ? undefined : error,
+    });
 
     return NextResponse.json(
       {
-        error:
-          'Không thể gửi OTP. Vui lòng kiểm tra cấu hình SMTP và terminal.',
+        error: known?.message ?? 'Không thể gửi OTP do lỗi máy chủ.',
+        code: known?.code ?? 'OTP_INTERNAL',
       },
-      { status: 500 }
+      {
+        status: known?.status ?? 500,
+        headers: { 'Cache-Control': 'no-store' },
+      }
     );
   }
 }
