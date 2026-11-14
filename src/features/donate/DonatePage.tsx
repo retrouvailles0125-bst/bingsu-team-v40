@@ -1,5 +1,5 @@
-import DonationAllocation from './DonationAllocation';
 'use client';
+import DonationAllocation from './DonationAllocation';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {createBrowserClient} from '@supabase/ssr';
