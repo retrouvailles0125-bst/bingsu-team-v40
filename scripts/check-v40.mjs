@@ -1,0 +1,14 @@
+import {readFileSync,existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const source=readFileSync('reference/v40-original.html','utf8');
+const expected=['THỐNG KÊ TỔNG QUAN','THEO DÕI DONATE','NGÔI SAO MAY MẮN','SÀN TRADE GIFT','YÊU THƯƠNG GỬI TRANG','TÀI KHOẢN CỦA TÔI','BINGSU TEAM'];
+const labels=[...source.matchAll(/<button data-tab="[^"]+">([^<]+)<\/button>/g)].map(x=>x[1]);
+const cfg=readFileSync('src/config/site.ts','utf8');
+const got=[...cfg.matchAll(/label: '([^']+)'/g)].map(x=>x[1]);
+if(JSON.stringify(labels)!==JSON.stringify(expected)) throw new Error('V40 navigation mismatch');
+if(JSON.stringify(got)!==JSON.stringify(expected)) throw new Error('Next navigation mismatch');
+if(!existsSync('src/styles/v40-original.css')) throw new Error('Missing original CSS');
+if(existsSync('public/reference')) throw new Error('Reference exposed under public');
+const hash=createHash('sha256').update(source).digest('hex');
+console.log('PASS: 7 V40 menus match Next config; original CSS present; private reference path.');
+console.log('V40 SHA256:',hash);

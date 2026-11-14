@@ -1,2 +1,1 @@
-import {LovePage} from '@/features/love/LovePage';
-export default function Page(){return <LovePage/>}
+export {default} from '@/features/love/LovePage';

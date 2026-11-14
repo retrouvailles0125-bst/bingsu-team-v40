@@ -1,2 +1,1 @@
-import {DonatePage} from '@/features/donate/DonatePage';
-export default function Page(){return <DonatePage/>}
+export {default} from '@/features/donate/DonatePage';

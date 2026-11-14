@@ -1,2 +1,1 @@
-import {AccountPage} from '@/features/account/AccountPage';
-export default function Page(){return <AccountPage/>}
+export {default} from '@/features/account/AccountPage';
