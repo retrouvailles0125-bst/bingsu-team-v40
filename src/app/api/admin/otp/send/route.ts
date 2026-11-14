@@ -136,14 +136,25 @@ export async function POST(request: NextRequest) {
 
     if (insertError) throw insertError;
 
-    const host = process.env.SMTP_HOST;
+    // Accept both the current V40 names and the older SMTP names.
+    // This avoids breaking Production when the Vercel project still uses
+    // SMTP_PASS / SMTP_FROM from the earlier mail configuration.
+    const host = process.env.SMTP_HOST?.trim() || 'smtp.gmail.com';
     const port = Number(process.env.SMTP_PORT || 465);
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_APP_PASSWORD;
-    const from = process.env.SMTP_FROM_EMAIL || user;
+    const user = process.env.SMTP_USER?.trim();
+    const pass = process.env.SMTP_APP_PASSWORD || process.env.SMTP_PASS;
+    const from = process.env.SMTP_FROM_EMAIL?.trim()
+      || process.env.SMTP_FROM?.trim()
+      || user;
 
-    if (!host || !user || !pass || !from) {
-      throw new Error('Thiếu cấu hình Gmail SMTP.');
+    if (!user || !pass || !from || !Number.isInteger(port) || port < 1 || port > 65535) {
+      console.error('Admin OTP SMTP configuration incomplete:', {
+        hasUser: Boolean(user),
+        hasPassword: Boolean(pass),
+        hasFrom: Boolean(from),
+        validPort: Number.isInteger(port) && port >= 1 && port <= 65535,
+      });
+      throw new Error('Thiếu hoặc sai cấu hình Gmail SMTP.');
     }
 
     const transporter = nodemailer.createTransport({
