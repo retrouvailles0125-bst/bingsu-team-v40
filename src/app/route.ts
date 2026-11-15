@@ -152,6 +152,20 @@ export async function GET() {
     html = html.replace(from, to);
   }
 
+  // The original V40 hides Spin and Trade navigation when email is empty.
+  // Keep navigation visible for guests; access is still gated by login.
+  const hideGuestNav = "if(b.dataset.tab==='spin'||b.dataset.tab==='trade')b.classList.toggle('hidden',!email)";
+  if (!html.includes(hideGuestNav)) {
+    throw new Error('Không tìm thấy điều kiện ẩn Gacha/Trade trong V40.');
+  }
+  html = html.replace(hideGuestNav, "if(b.dataset.tab==='spin'||b.dataset.tab==='trade')b.classList.remove('hidden')");
+
+  const guestNavGuard = "if((t==='spin'||t==='trade')&&!email){tab='account';render();return}";
+  if (!html.includes(guestNavGuard)) {
+    throw new Error('Không tìm thấy điều hướng khách của Gacha/Trade.');
+  }
+  html = html.replace(guestNavGuard, "if((t==='spin'||t==='trade')&&!email){window.location.assign('/login');return}");
+
   // Homepage donation totals are read from verified Supabase donations, never legacy browser storage.
   // Keep the original V40 markup; only replace its data source for the metric cards.
   const legacyHomeTotals = "ds.filter(d=>d.projectId===p.id).reduce((a,d)=>a+Number(d.actual||0),0)";
