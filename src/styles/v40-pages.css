@@ -74,3 +74,17 @@
 .bst-v40-admin-menu .bst-v40-admin-primary{display:inline-block;color:#fff;background:#e12589;padding:17px 25px;box-shadow:0 6px 14px #d91d8730}
 .bst-v40-admin-menu .bst-v40-admin-primary:hover{background:#bd1670;color:#fff}
 @media(max-width:600px){.bst-v40-admin-menu{padding:10px}.bst-v40-admin-menu>section{padding:16px 4px}.bst-v40-admin-menu-grid{grid-template-columns:1fr 1fr;gap:5px}.bst-v40-admin-menu a{padding:10px 6px;font-size:12px}}
+
+/* V40 public donation tracking */
+.bst-v40-tracking-hero{text-align:center;padding:28px 16px;margin:12px 0 20px;border:1px solid #f2c8df;border-radius:22px;background:radial-gradient(circle at 50% 0%,#ffe3f3,#fff8fc 75%)}
+.bst-v40-tracking-hero span{font-size:11px;letter-spacing:.17em;color:#a34a81;font-weight:800}
+.bst-v40-tracking-hero h1{color:#df258c;font-size:clamp(25px,5vw,38px);margin:12px 0}
+.bst-v40-tracking-hero p{color:#875b78}
+.bst-v40-tracking-history{margin-top:28px}
+.bst-v40-tracking-heading{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.bst-v40-tracking-heading h2{color:#c21e79}
+.bst-v40-tracking-heading span{color:#955679;font-weight:700}
+.bst-v40-tracking-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0}
+.bst-v40-tracking-filters label{display:grid;gap:7px;font-size:12px;color:#975777;font-weight:800}
+.bst-v40-tracking-filters input,.bst-v40-tracking-filters select{width:100%;min-width:0;padding:10px;border:1px solid #e8b7d2;border-radius:10px;background:#fff}
+@media(max-width:650px){.bst-v40-tracking-filters{grid-template-columns:1fr 1fr}.bst-v40-tracking-filters label:first-child{grid-column:1/-1}}
