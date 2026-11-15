@@ -13,13 +13,11 @@ export async function POST(req:Request){
  const {data:project}=await supabase.from('projects').select('id').eq('id',input.data.project_id).eq('is_open',true).maybeSingle();if(!project)return NextResponse.json({error:'Project đã đóng hoặc không tồn tại'},{status:400});
  const {data:donation,error}=await supabase.from('donations').insert({user_id:user.id,project_id:input.data.project_id,declared_amount:input.data.declared_amount,kandee_message:input.data.kandee_message,bst_message:input.data.bst_message}).select('id,status').single();
  if(error||!donation)return NextResponse.json({error:error?.message||'Không tạo được khai báo'},{status:400});
- const paths:string[]=[];
  for(let i=0;i<bills.length;i++){
   const file=bills[i];const ext=({'image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/pdf':'pdf'} as Record<string,string>)[file.type];
   const path=`${user.id}/${donation.id}/${crypto.randomUUID()}.${ext}`;
   const {error:uploadError}=await supabase.storage.from('donation-bills').upload(path,file,{contentType:file.type,upsert:false});
   if(uploadError){return NextResponse.json({error:'Tải bill chưa hoàn tất. Không gửi lại giao dịch mới; vui lòng liên hệ BST kèm mã khai báo để được hỗ trợ.',donation_id:donation.id,status:'incomplete_upload'},{status:500});}
-  paths.push(path);
   const {error:linkError}=await supabase.from('donation_bills').insert({donation_id:donation.id,storage_path:path,uploaded_by:user.id});
   if(linkError)return NextResponse.json({error:'Bill đã tải lên nhưng chưa liên kết được. Không gửi lại giao dịch mới; liên hệ BST kèm mã khai báo.',donation_id:donation.id,status:'incomplete_upload'},{status:500});
  }
