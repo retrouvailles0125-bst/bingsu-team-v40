@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase';
 import { requireAdminAccess } from '@/lib/admin-security';
 import AdminDonateDashboard from './AdminDonateDashboard';
 import AdminOtpForm from './AdminOtpForm';
+import AdminProjects from './AdminProjects';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +105,7 @@ export default async function AdminPage() {
     );
   }
 
-  const [donationsResult, settingsResult] = await Promise.all([
+  const [donationsResult, settingsResult, projectsResult] = await Promise.all([
     db
       .from('donations')
       .select(
@@ -117,6 +118,7 @@ export default async function AdminPage() {
       .select('normal_rate,gold_rate,verify_wait_seconds')
       .eq('id', true)
       .single(),
+    db.from('projects').select('id,name,description,is_open').order('created_at', { ascending: false }),
   ]);
 
   return (
@@ -189,6 +191,8 @@ export default async function AdminPage() {
           ))}
         </div>
       </section>
+
+      <AdminProjects projects={projectsResult.data ?? []} />
 
       <section
         className="panel"
