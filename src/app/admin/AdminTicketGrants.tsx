@@ -2,7 +2,8 @@
 import {useState} from 'react';
 import {useRouter} from 'next/navigation';
 type Profile={id:string;username:string|null;blocked:boolean;role:string};
-export default function AdminTicketGrants({profiles}:{profiles:Profile[]}){
+type Grant={id:string;recipient_id:string;actor_id:string;normal_count:number;gold_count:number;reason:string;created_at:string};
+export default function AdminTicketGrants({profiles,history,historyError}:{profiles:Profile[];history:Grant[];historyError?:string}){
  const router=useRouter();
  const [recipient,setRecipient]=useState('');
  const [normal,setNormal]=useState('0');
@@ -45,5 +46,7 @@ export default function AdminTicketGrants({profiles}:{profiles:Profile[]}){
    <button disabled={busy||!recipient} type="submit">{busy?'Đang xử lý...':'Xác nhận cấp lượt'}</button>
    {message&&<p role="status">{message}</p>}
   </form>
+ <h3 style={{marginTop:24}}>LỊCH SỬ CẤP LƯỢT</h3>
+ {historyError?<p role="alert">Không thể tải lịch sử: {historyError}</p>:history.length===0?<p className="muted">Chưa có lần cấp lượt nào.</p>:<div style={{overflowX:'auto'}}><table style={{width:'100%',fontSize:13}}><thead><tr><th>Thời gian</th><th>Kandee</th><th>Normal</th><th>Gold</th><th>Lý do</th><th>Admin</th></tr></thead><tbody>{history.map(h=><tr key={h.id}><td>{new Date(h.created_at).toLocaleString('vi-VN')}</td><td>{profiles.find(p=>p.id===h.recipient_id)?.username||h.recipient_id}</td><td>{h.normal_count}</td><td>{h.gold_count}</td><td>{h.reason}</td><td>{h.actor_id}</td></tr>)}</tbody></table></div>}
  </section>;
 }
