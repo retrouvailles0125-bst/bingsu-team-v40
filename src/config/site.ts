@@ -12,7 +12,7 @@ export const site = {
     { label: 'NGÔI SAO MAY MẮN', href: '/star' },
     { label: 'SÀN TRADE GIFT', href: '/trade' },
     { label: 'YÊU THƯƠNG GỬI TRANG', href: '/love' },
-    { label: 'TÀI KHOẢN CỦA TÔI', href: '/?tab=account' },
+    { label: 'TÀI KHOẢN CỦA TÔI', href: '/account' },
     { label: 'BINGSU TEAM', href: '/admin' },
   ],
 } as const;
