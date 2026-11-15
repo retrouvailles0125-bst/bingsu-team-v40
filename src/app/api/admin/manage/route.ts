@@ -7,6 +7,7 @@ const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('profile.block'), target: z.string().uuid(), blocked: z.boolean(), message: z.string().max(500).default('') }).strict(),
   z.object({ action: z.literal('gift_type.update'), target: z.string().uuid(), normal_weight: z.number().int().min(0).max(1000000), gold_weight: z.number().int().min(0).max(1000000), stock_total: z.number().int().min(0).max(1000000), active: z.boolean() }).strict(),
   z.object({ action: z.literal('community_post.hide'), target: z.string().uuid(), hidden: z.boolean() }).strict(),
+  z.object({ action: z.literal('community_reply.hide'), target: z.string().uuid(), hidden: z.boolean() }).strict(),
   z.object({ action: z.literal('love_message.hide'), target: z.string().uuid(), hidden: z.boolean() }).strict(),
 ]);
 export async function POST(req: Request) {
