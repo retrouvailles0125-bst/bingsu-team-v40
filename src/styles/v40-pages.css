@@ -23,3 +23,15 @@
 
 /* Respect users who prefer reduced motion while keeping the star-wish stage. */
 @media (prefers-reduced-motion:reduce){.bst-v40-page .wish-anim{animation:none}.bst-v40-page button{transition:none}.bst-v40-page button:not(:disabled):hover{transform:none}}
+
+/* Love letter jar — original V40-inspired layout, online data remains Supabase-backed. */
+.bst-v40-love-summary{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px auto 10px}
+.bst-v40-love-summary span{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid #eec4dd;border-radius:999px;background:#fff1f8;color:#9b4279;font-size:12px;font-weight:700}
+.bst-v40-love-summary strong{color:#e12589;font-size:21px}
+.bst-v40-love-decor{text-align:center;color:#e7a4cb;font-size:26px;letter-spacing:26px}
+.bst-v40-page .bst-v40-jar{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;max-width:240px;min-height:245px;margin:24px auto 30px;padding:28px 20px 18px;border:5px solid #f4b9da;border-top:0;border-radius:46px 46px 64px 64px;background:radial-gradient(ellipse at 35% 25%,#fff 0%,#ffe5f3 50%,#f2b2d7 100%);box-shadow:0 0 22px #e1258940,0 15px 28px #b73e8c30,inset 0 0 22px #fff}
+.bst-v40-page .bst-v40-jar-lid{position:absolute;top:-19px;left:4%;right:4%;padding:10px 4px;border:3px solid #aa7298;border-radius:14px;background:repeating-linear-gradient(90deg,#d7b2ce 0 7px,#f1d7e8 7px 13px);box-shadow:0 4px 8px #85467250;color:#b91f7d;font-size:11px;font-weight:800}
+.bst-v40-page .bst-v40-jar-hearts{font-size:25px;line-height:1.65;filter:drop-shadow(0 2px 2px #e1258928)}
+.bst-v40-page .bst-v40-jar-label{padding:9px 15px;border:2px solid #d78bb7;border-radius:9px;background:#fff5fb;color:#aa2e78;font-size:12px;font-weight:800;transform:rotate(-4deg);box-shadow:0 5px 10px #a95a8b24}
+.bst-v40-love-hint{text-align:center;font-size:12px;color:#877784;letter-spacing:.04em}
+@media(max-width:650px){.bst-v40-love-summary span{font-size:10px;padding:8px 10px}.bst-v40-love-decor{letter-spacing:15px}}
