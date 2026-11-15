@@ -192,10 +192,17 @@ export default function AdminDonateDashboard({
           );
         }
 
+        if (!settings || settings.normal_rate <= 0 || settings.gold_rate <= 0) {
+          throw new Error('Chưa có tỷ lệ Gacha hợp lệ để tính lượt.');
+        }
+
+        const gold = Math.floor(receivedAmount / settings.gold_rate);
+        const remainder = receivedAmount - gold * settings.gold_rate;
+        const normal = Math.floor(remainder / settings.normal_rate);
         const confirmed = window.confirm(
-          `Bắt đầu xác minh Donate với số tiền thực nhận ${money(
-            receivedAmount
-          )}?\n\nSau thời gian chờ, Admin cần bấm Finalize.`
+          `Bắt đầu xác minh ${money(receivedAmount)}?\n` +
+          `Dự kiến: ${gold} Gold + ${normal} Normal.\n` +
+          `Lượt sẽ tự cộng khi Admin Finalize sau thời gian chờ.`
         );
 
         if (!confirmed) return;
@@ -226,7 +233,7 @@ export default function AdminDonateDashboard({
 
       if (action === 'finalize') {
         const confirmed = window.confirm(
-          'Hoàn tất xác minh Donate?\n\nSau bước này, Kandee có thể chọn cách phân bổ lượt Gacha.'
+          'Hoàn tất xác minh Donate và tự động cấp lượt Gold tối đa, phần dư đổi Normal?'
         );
 
         if (!confirmed) return;
@@ -236,7 +243,7 @@ export default function AdminDonateDashboard({
         });
 
         setNotice(
-          'Donate đã Verified. Đang chờ Kandee phân bổ lượt.'
+          'Donate đã Verified. Hệ thống đã tự động phân bổ và cộng lượt Gacha.'
         );
       }
 
@@ -442,6 +449,17 @@ export default function AdminDonateDashboard({
             );
 
             const isBusy = busyId === donation.id;
+            const enteredAmount = amounts[donation.id]?.trim() ?? '';
+            const validPreview = /^\d+$/.test(enteredAmount) &&
+              Number.isSafeInteger(Number(enteredAmount)) &&
+              Number(enteredAmount) <= 1_000_000_000 &&
+              Boolean(settings && settings.normal_rate > 0 && settings.gold_rate > 0);
+            const previewGold = validPreview && settings
+              ? Math.floor(Number(enteredAmount) / settings.gold_rate) : 0;
+            const previewRemainder = validPreview && settings
+              ? Number(enteredAmount) - previewGold * settings.gold_rate : 0;
+            const previewNormal = validPreview && settings
+              ? Math.floor(previewRemainder / settings.normal_rate) : 0;
 
             return (
               <article key={donation.id} style={cardStyle}>
@@ -594,6 +612,13 @@ export default function AdminDonateDashboard({
                   </div>
                 )}
 
+                {donation.status === 'pending' && validPreview && (
+                  <p style={{ marginTop: 8, color: '#a41464', fontWeight: 700 }}>
+                    Dự kiến tự cấp khi Finalize: {previewGold} Gold + {previewNormal} Normal
+                    {' · '}Dư {money(previewRemainder - previewNormal * (settings?.normal_rate ?? 0))}
+                  </p>
+                )}
+
                 {donation.status === 'processing' && (
                   <div
                     style={{
@@ -685,7 +710,7 @@ export default function AdminDonateDashboard({
                         ? `Đã phân bổ: ${
                             donation.allocation_choice ?? '—'
                           }`
-                        : 'Đang chờ Kandee chọn phân bổ lượt Gacha'}
+                        : 'Chưa có phân bổ lượt (giao dịch cũ cần đối soát)'}
                     </div>
                   </div>
                 )}
@@ -727,7 +752,7 @@ export default function AdminDonateDashboard({
         }}
       >
         Hiển thị tối đa 100 Donate mới nhất. Việc xác minh
-        và phân bổ lượt được xử lý tại Supabase; giao diện
+        và tự động phân bổ lượt được xử lý tại Supabase; giao diện
         không trực tiếp cộng lượt vào ví.
       </p>
     </div>
