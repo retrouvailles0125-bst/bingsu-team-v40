@@ -161,7 +161,7 @@ export async function GET() {
   }
   html = html.replace(
     legacyShow,
-    "function show(t){const backendRoutes={spin:'/star',trade:'/trade',love:'/love',tracking:'/tracking',admin:'/admin'};if(backendRoutes[t]){window.location.assign(backendRoutes[t]);return}if(t==='community')t='home';if(spinning)return;"
+    "function show(t){const backendRoutes={spin:'/star',trade:'/trade',love:'/love',tracking:'/tracking',account:'/account',admin:'/admin'};if(backendRoutes[t]){window.location.assign(backendRoutes[t]);return}if(t==='community')t='home';if(spinning)return;"
   );
 
   // Disable the legacy browser-only settlement process. Server-side donation
