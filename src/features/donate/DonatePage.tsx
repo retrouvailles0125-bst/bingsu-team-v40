@@ -39,9 +39,9 @@ export default function Donate(){
    files.forEach(f=>body.append('bills',f));
    const response=await fetch('/api/donations',{method:'POST',body});
    const result=await response.json();
-   if(!response.ok)throw Error(result.error||'Không gửi được Donate');
+   if(!response.ok){if(result.donation_id)setReference(String(result.donation_id));throw Error(result.error||'Không gửi được Donate')}
    setReference(result.id);setMessage('Đã gửi khai báo. Trạng thái đang chờ BST đối soát; chưa cấp lượt quay.');
-   setFiles([]);
+   setFiles([]);setKandee('');setBst('');
   }catch(e){setMessage(e instanceof Error?e.message:'Không gửi được Donate.')}finally{setBusy(false)}
  }
  return <main className="bst-v40-page">
