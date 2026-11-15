@@ -116,6 +116,25 @@ export async function GET() {
           console.error('Lỗi đồng bộ Project Supabase:', projectError);
           db.projects = [];
         }
+        // Refresh public project totals on each homepage load.
+        // If the API is unavailable, show 0 rather than stale localStorage totals.
+        window.__bstProjectDonationTotals = Object.create(null);
+        try {
+          const totalsResponse = await fetch('/api/donations/project-totals', {
+            credentials: 'same-origin',
+            cache: 'no-store'
+          });
+          if (!totalsResponse.ok) throw new Error('Không tải được thống kê Donate');
+          const totalsPayload = await totalsResponse.json();
+          (totalsPayload.totals || []).forEach(function(item) {
+            const amount = Number(item.total_received);
+            if (item.project_id && Number.isFinite(amount) && amount >= 0) {
+              window.__bstProjectDonationTotals[item.project_id] = amount;
+            }
+          });
+        } catch (totalsError) {
+          console.error('Lỗi đồng bộ tổng Donate Supabase:', totalsError);
+        }
         render();
       })();
       })();`,
@@ -132,6 +151,17 @@ export async function GET() {
 
     html = html.replace(from, to);
   }
+
+  // Homepage donation totals are read from verified Supabase donations, never legacy browser storage.
+  // Keep the original V40 markup; only replace its data source for the metric cards.
+  const legacyHomeTotals = "ds.filter(d=>d.projectId===p.id).reduce((a,d)=>a+Number(d.actual||0),0)";
+  if (!html.includes(legacyHomeTotals)) {
+    throw new Error('Không tìm thấy công thức thống kê Donate trên homepage V40.');
+  }
+  html = html.replace(
+    legacyHomeTotals,
+    "(window.__bstProjectDonationTotals && window.__bstProjectDonationTotals[p.id]) || 0"
+  );
 
   // V40 gốc gán onclick cho toàn bộ nav button.
   // Vì vậy phải gắn handler Admin sau handler gốc
