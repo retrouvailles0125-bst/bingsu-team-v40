@@ -18,7 +18,12 @@ export async function PATCH(req: Request) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Thông tin Project không hợp lệ' }, { status: 400 });
   const { id, ...updates } = parsed.data;
-  const { data, error } = await supabase.from('projects').update(updates).eq('id', id).select('id,name,description,is_open').single();
+  const { data, error } = await supabase.rpc('bst_admin_update_project', {
+    p_id: id,
+    p_name: updates.name,
+    p_description: updates.description,
+    p_is_open: updates.is_open,
+  });
   if (error) return NextResponse.json({ error: error.message }, { status: 403 });
   return NextResponse.json({ project: data });
 }
