@@ -142,71 +142,30 @@ export default async function AdminPage() {
           Trung tâm quản trị BINGSU TEAM.
         </p>
 
-        <h2>Danh mục quản trị</h2>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns:
-              'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 12,
-            marginBottom: 28,
-          }}
-        >
-          <a
-            href="#donate-management"
-            style={{
-              display: 'block',
-              padding: 18,
-              border: '2px solid #e12589',
-              borderRadius: 14,
-              background: '#fff0f8',
-              color: '#a41464',
-              textDecoration: 'none',
-            }}
-          >
-            <strong>Donate Management</strong>
-            <p style={{ fontSize: 13 }}>
-              Xác minh Donate và quản lý phân bổ lượt.
-            </p>
-            <span style={{ fontSize: 12 }}>
-              Đã kết nối Supabase
-            </span>
-          </a>
-
-          {adminModules.map((module) => (
-            <a
-              href={module.title === 'Quản lý Project' ? '#project-management' : module.title === 'Cài đặt Gacha' ? '#gacha-settings' : overviewLinks[module.title] || '#admin-pending'}
-              key={module.title}
-              style={{
-                padding: 18,
-                border: '1px solid #f0c8df',
-                borderRadius: 14,
-                background: '#fff',
-                display: 'block',
-                textDecoration: 'none',
-                color: 'inherit',
-                cursor: 'pointer',
-              }}
-            >
-              <strong style={{ color: '#a41464' }}>
-                {module.title}
-              </strong>
-              <p style={{ fontSize: 13 }}>
-                {module.description}
-              </p>
-              {module.title === 'Quản lý Project' ? (
-                <span>Mở quản lý Project · Supabase</span>
-              ) : module.title === 'Cài đặt Gacha' ? (
-                <span>Mở cài đặt Gacha · Supabase</span>
-              ) : overviewLinks[module.title] ? (
-                <span>Mở quản lý · Supabase</span>
-              ) : (
-                <span style={{ fontSize: 12, color: '#777' }}>Chưa kết nối Supabase</span>
-              )}
-            </a>
-          ))}
-        </div>
+        <nav className="bst-v40-admin-menu" aria-label="Danh mục quản trị V40">
+          <section><h2>✦ HỆ THỐNG</h2><a className="bst-v40-admin-primary" href="#accounts-overview">QUẢN LÝ TÀI KHOẢN USER</a></section>
+          <section><h2>DONATE &amp; PROJECT</h2><div className="bst-v40-admin-menu-grid">
+            <a href="#donate-management">KHAI BÁO DONATE / ĐỐI SOÁT DONATE</a>
+            <a href="#community-overview">LỜI NHẮN CỦA KANDEE</a>
+            <a href="#bank-settings">CẤU HÌNH QR NGÂN HÀNG NHẬN DONATE</a>
+            <a href="#project-management">QUẢN LÝ PROJECT DONATE</a>
+          </div></section>
+          <section><h2>VÒNG XOAY &amp; QUÀ</h2><div className="bst-v40-admin-menu-grid">
+            <a href="#gacha-settings">CÀI ĐẶT GACHA</a>
+            <a href="#grant-tickets">THEO DÕI &amp; TẶNG LƯỢT QUAY USER</a>
+            <a href="#gift-types-overview">XÁC SUẤT TRÚNG QUÀ THEO ĐỘ HIẾM</a>
+            <a href="#gift-items-overview">QUẢN LÝ DANH SÁCH QUÀ TẶNG</a>
+            <a href="#spins-overview">KẾT QUẢ QUAY GỬI VỀ ADMIN</a>
+          </div></section>
+          <section><h2>TRADE &amp; INVENTORY</h2><div className="bst-v40-admin-menu-grid">
+            <a href="#trade-overview">THEO DÕI TRADE GIFT</a>
+            <a href="#gift-items-overview">THEO DÕI TẶNG GIFT / INVENTORY CUỐI CÙNG THEO USER</a>
+          </div></section>
+          <section><h2>CỘNG ĐỒNG</h2><div className="bst-v40-admin-menu-grid">
+            <a href="#community-overview">QUẢN LÝ CỘNG ĐỒNG KANDEE</a>
+            <a href="#admin-reports">BÁO CÁO &amp; XUẤT DỮ LIỆU</a>
+          </div></section>
+        </nav>
       </section>
 
       <AdminBankSettings initial={(await db.from('bst_donation_bank_settings').select('bank_name,account_name,account_number,qr_image_url,instructions').eq('id',true).maybeSingle()).data ?? null} />
