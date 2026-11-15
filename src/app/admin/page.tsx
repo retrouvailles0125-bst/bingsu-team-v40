@@ -168,13 +168,18 @@ export default async function AdminPage() {
           </a>
 
           {adminModules.map((module) => (
-            <div
+            <a
+              href={module.title === 'Quản lý Project' ? '#project-management' : module.title === 'Cài đặt vòng xoay' ? '#gacha-settings' : overviewLinks[module.title] || '#admin-pending'}
               key={module.title}
               style={{
                 padding: 18,
                 border: '1px solid #f0c8df',
                 borderRadius: 14,
                 background: '#fff',
+                display: 'block',
+                textDecoration: 'none',
+                color: 'inherit',
+                cursor: 'pointer',
               }}
             >
               <strong style={{ color: '#a41464' }}>
@@ -184,19 +189,20 @@ export default async function AdminPage() {
                 {module.description}
               </p>
               {module.title === 'Quản lý Project' ? (
-                <a href="#project-management">Mở quản lý Project · Supabase</a>
+                <span>Mở quản lý Project · Supabase</span>
               ) : module.title === 'Cài đặt vòng xoay' ? (
-                <a href="#gacha-settings">Mở cài đặt vòng xoay · Supabase</a>
+                <span>Mở cài đặt vòng xoay · Supabase</span>
               ) : overviewLinks[module.title] ? (
-                <a href={overviewLinks[module.title]}>Xem dữ liệu Supabase · Chưa hỗ trợ chỉnh sửa</a>
+                <span>Mở quản lý · Supabase</span>
               ) : (
                 <span style={{ fontSize: 12, color: '#777' }}>Chưa kết nối Supabase</span>
               )}
-            </div>
+            </a>
           ))}
         </div>
       </section>
 
+      <section className="panel" id="admin-pending"><p>Ngân hàng & QR Donate và Báo cáo Excel đang được phát triển. Chưa có thao tác lưu dữ liệu cho hai module này.</p></section>
       <AdminGachaSettings settings={settingsResult.data ?? null} />
       <AdminProjects projects={projectsResult.data ?? []} />
       <AdminDataOverview />
