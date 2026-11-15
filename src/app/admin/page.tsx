@@ -127,6 +127,11 @@ export default async function AdminPage() {
     db.from('projects').select('id,name,description,is_open').order('created_at', { ascending: false }),
   ]);
 
+  const [grantProfiles,grantHistory] = await Promise.all([
+    db.from('profiles').select('id,username,blocked,role').order('created_at',{ascending:false}).limit(500),
+    db.from('admin_ticket_grants').select('id,recipient_id,actor_id,normal_count,gold_count,reason,created_at').order('created_at',{ascending:false}).limit(100),
+  ]);
+
   return (
     <main className="page">
       <section className="panel">
@@ -214,7 +219,7 @@ export default async function AdminPage() {
       </section>
       <AdminGachaSettings settings={settingsResult.data ?? null} />
       <AdminProjects projects={projectsResult.data ?? []} />
-      <AdminTicketGrants profiles={(await db.from('profiles').select('id,username,blocked,role').order('created_at',{ascending:false}).limit(500)).data ?? []} />
+      <AdminTicketGrants profiles={grantProfiles.data ?? []} history={grantHistory.data ?? []} historyError={grantHistory.error?.message} />
       <AdminDataOverview />
 
       <section
