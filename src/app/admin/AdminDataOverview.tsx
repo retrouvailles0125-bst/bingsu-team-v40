@@ -21,7 +21,7 @@ function GridSection({ id, title, rows, error, fields, kind }: {
   </section>;
 }
 
-export default async function AdminDataOverview() {
+export default async function AdminDataOverview({section}:{section:string}) {
   const db = await supabaseServer();
   const [profiles, balances, spins, gifts, types, listings, offers, posts, replies, letters] = await Promise.all([
     db.from('profiles').select('id,username,role,blocked,created_at').limit(100),
@@ -36,15 +36,15 @@ export default async function AdminDataOverview() {
     db.from('love_messages').select('id,author_id,body,hidden,is_private,created_at').order('created_at', { ascending: false }).limit(100),
   ]);
   return <>
-    <GridSection id="accounts-overview" kind="profiles" title="QUẢN LÝ TÀI KHOẢN — DANH SÁCH" rows={profiles.data ?? []} error={profiles.error?.message} fields={['id','username','role','blocked','created_at']} />
-    <GridSection id="tickets-overview" title="SỐ DƯ LƯỢT GACHA" rows={balances.data ?? []} error={balances.error?.message} fields={['user_id','normal_available','gold_available']} />
-    <GridSection id="spins-overview" title="KẾT QUẢ QUAY" rows={spins.data ?? []} error={spins.error?.message} fields={['id','user_id','kind','gift_item_id','created_at']} />
-    <GridSection id="gift-types-overview" kind="gift_types" title="QUẢN LÝ QUÀ VÀ XÁC SUẤT" rows={types.data ?? []} error={types.error?.message} fields={['name','rarity','stock_total','stock_issued','normal_weight','gold_weight','active']} />
-    <GridSection id="gift-items-overview" title="QUÀ ĐÃ PHÁT HÀNH" rows={gifts.data ?? []} error={gifts.error?.message} fields={['code','gift_type_id','owner_id','source','created_at']} />
-    <GridSection id="trade-overview" title="TRADE — DANH SÁCH" rows={listings.data ?? []} error={listings.error?.message} fields={['id','owner_id','wanted_description','status','created_at']} />
-    <GridSection id="offers-overview" title="TRADE — ĐỀ NGHỊ" rows={offers.data ?? []} error={offers.error?.message} fields={['id','listing_id','offered_by','status','created_at']} />
-    <GridSection id="community-overview" kind="posts" title="GIAO LƯU — BÀI VIẾT" rows={posts.data ?? []} error={posts.error?.message} fields={['id','author_id','title','hidden','created_at']} />
-    <GridSection id="replies-overview" kind="replies" title="GIAO LƯU — BÌNH LUẬN" rows={replies.data ?? []} error={replies.error?.message} fields={['id','post_id','author_id','body','hidden','created_at']} />
-    <GridSection id="love-overview" kind="letters" title="THƯ GỬI TRANG" rows={letters.data ?? []} error={letters.error?.message} fields={['id','author_id','body','hidden','is_private','created_at']} />
+    {section==='accounts-overview' && <GridSection id="accounts-overview" kind="profiles" title="QUẢN LÝ TÀI KHOẢN — DANH SÁCH" rows={profiles.data ?? []} error={profiles.error?.message} fields={['id','username','role','blocked','created_at']} />}
+    {section==='tickets-overview' && <GridSection id="tickets-overview" title="SỐ DƯ LƯỢT GACHA" rows={balances.data ?? []} error={balances.error?.message} fields={['user_id','normal_available','gold_available']} />}
+    {section==='spins-overview' && <GridSection id="spins-overview" title="KẾT QUẢ QUAY" rows={spins.data ?? []} error={spins.error?.message} fields={['id','user_id','kind','gift_item_id','created_at']} />}
+    {section==='gift-types-overview' && <GridSection id="gift-types-overview" kind="gift_types" title="QUẢN LÝ QUÀ VÀ XÁC SUẤT" rows={types.data ?? []} error={types.error?.message} fields={['name','rarity','stock_total','stock_issued','normal_weight','gold_weight','active']} />}
+    {section==='gift-items-overview' && <GridSection id="gift-items-overview" title="QUÀ ĐÃ PHÁT HÀNH" rows={gifts.data ?? []} error={gifts.error?.message} fields={['code','gift_type_id','owner_id','source','created_at']} />}
+    {section==='trade-overview' && <GridSection id="trade-overview" title="TRADE — DANH SÁCH" rows={listings.data ?? []} error={listings.error?.message} fields={['id','owner_id','wanted_description','status','created_at']} />}
+    {section==='offers-overview' && <GridSection id="offers-overview" title="TRADE — ĐỀ NGHỊ" rows={offers.data ?? []} error={offers.error?.message} fields={['id','listing_id','offered_by','status','created_at']} />}
+    {section==='community-overview' && <GridSection id="community-overview" kind="posts" title="GIAO LƯU — BÀI VIẾT" rows={posts.data ?? []} error={posts.error?.message} fields={['id','author_id','title','hidden','created_at']} />}
+    {section==='replies-overview' && <GridSection id="replies-overview" kind="replies" title="GIAO LƯU — BÌNH LUẬN" rows={replies.data ?? []} error={replies.error?.message} fields={['id','post_id','author_id','body','hidden','created_at']} />}
+    {section==='love-overview' && <GridSection id="love-overview" kind="letters" title="THƯ GỬI TRANG" rows={letters.data ?? []} error={letters.error?.message} fields={['id','author_id','body','hidden','is_private','created_at']} />}
   </>;
 }
