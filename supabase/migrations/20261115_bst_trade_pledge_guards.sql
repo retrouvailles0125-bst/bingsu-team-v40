@@ -1,5 +1,21 @@
 -- Guard against transferring gifts that are committed to other active trades.
 -- Apply after 003_trade_and_trang.sql; preserves existing trade records.
+create or replace function public.trade_create(items uuid[], description text) returns uuid
+language plpgsql security definer set search_path='' as $
+declare uid uuid:=auth.uid(); lid uuid; n int;
+begin
+ if uid is null or not public.active_user() then raise exception 'Not authorized'; end if;
+ if coalesce(array_length(items,1),0) not between 1 and 20 or length(coalesce(description,''))>3000 then raise exception 'Invalid listing'; end if;
+ if (select count(distinct x) from unnest(items) x)<>array_length(items,1) then raise exception 'Duplicate gifts'; end if;
+ perform pg_advisory_xact_lock(734813);
+ select count(*) into n from public.gift_items where id=any(items) and owner_id=uid;
+ if n<>array_length(items,1) then raise exception 'Gift ownership mismatch'; end if;
+ if exists(select 1 from public.trade_listing_items li join public.trade_listings l on l.id=li.listing_id where li.gift_item_id=any(items) and l.status='open') then raise exception 'Gift already listed'; end if;
+ if exists(select 1 from public.trade_offer_items oi join public.trade_offers o on o.id=oi.offer_id join public.trade_listings l on l.id=o.listing_id where oi.gift_item_id=any(items) and o.status='pending' and l.status='open') then raise exception 'Gift already pledged to a pending offer'; end if;
+ insert into public.trade_listings(owner_id,wanted_description) values(uid,coalesce(description,'')) returning id into lid;
+ insert into public.trade_listing_items(listing_id,gift_item_id) select lid,unnest(items);
+ return lid;
+end $;
 create or replace function public.trade_offer(listing uuid, items uuid[]) returns uuid
 language plpgsql security definer set search_path='' as $$
 declare uid uuid:=auth.uid(); l public.trade_listings%rowtype; oid uuid; n int;
@@ -50,5 +66,5 @@ begin
  return offer;
 end $$;
 
-revoke all on function public.trade_offer(uuid,uuid[]),public.trade_decide(uuid,boolean) from public,anon,authenticated;
-grant execute on function public.trade_offer(uuid,uuid[]),public.trade_decide(uuid,boolean) to authenticated;
+revoke all on function public.trade_create(uuid[],text),public.trade_offer(uuid,uuid[]),public.trade_decide(uuid,boolean) from public,anon,authenticated;
+grant execute on function public.trade_create(uuid[],text),public.trade_offer(uuid,uuid[]),public.trade_decide(uuid,boolean) to authenticated;
