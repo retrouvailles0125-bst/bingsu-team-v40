@@ -179,14 +179,11 @@ export default async function AdminPage() {
               <p style={{ fontSize: 13 }}>
                 {module.description}
               </p>
-              <span
-                style={{
-                  fontSize: 12,
-                  color: '#777',
-                }}
-              >
-                Chưa kết nối Supabase
-              </span>
+              {module.title === 'Quản lý Project' ? (
+                <a href="#project-management">Mở quản lý Project · Supabase</a>
+              ) : (
+                <span style={{ fontSize: 12, color: '#777' }}>Chưa kết nối Supabase</span>
+              )}
             </div>
           ))}
         </div>
