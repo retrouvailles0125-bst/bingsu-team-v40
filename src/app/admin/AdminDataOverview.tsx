@@ -1,8 +1,9 @@
 import { supabaseServer } from '@/lib/supabase';
+import AdminManageActions from './AdminManageActions';
 
 type Row = Record<string, unknown>;
-function GridSection({ id, title, rows, error, fields }: {
-  id: string; title: string; rows: Row[]; error?: string; fields: string[];
+function GridSection({ id, title, rows, error, fields, kind }: {
+  id: string; title: string; rows: Row[]; error?: string; fields: string[]; kind?: 'profiles' | 'gift_types' | 'posts' | 'letters';
 }) {
   return <section className="panel" id={id} style={{ scrollMarginTop: 24 }}>
     <h2>{title}</h2>
@@ -16,7 +17,7 @@ function GridSection({ id, title, rows, error, fields }: {
           </tr>)}</tbody>
         </table>
       </div>}
-    <p className="muted">Đang hiển thị dữ liệu Supabase (chế độ xem, chưa hỗ trợ chỉnh sửa).</p>
+    {kind && !error ? <AdminManageActions kind={kind} rows={rows} /> : <p className="muted">Dữ liệu Supabase — chế độ xem.</p>}
   </section>;
 }
 
@@ -30,18 +31,18 @@ export default async function AdminDataOverview() {
     db.from('gift_types').select('id,name,rarity,stock_total,stock_issued,normal_weight,gold_weight,active').limit(100),
     db.from('trade_listings').select('id,owner_id,wanted_description,status,created_at').order('created_at', { ascending: false }).limit(100),
     db.from('trade_offers').select('id,listing_id,offered_by,status,created_at').order('created_at', { ascending: false }).limit(100),
-    db.from('community_posts').select('id,author_id,title,hidden,created_at').order('created_at', { ascending: false }).limit(100),
+    db.from('community_posts').select('id,author_id,title,body,hidden,created_at').order('created_at', { ascending: false }).limit(100),
     db.from('love_messages').select('id,author_id,body,hidden,is_private,created_at').order('created_at', { ascending: false }).limit(100),
   ]);
   return <>
-    <GridSection id="accounts-overview" title="QUẢN LÝ TÀI KHOẢN — DANH SÁCH" rows={profiles.data ?? []} error={profiles.error?.message} fields={['id','username','role','blocked','created_at']} />
+    <GridSection id="accounts-overview" kind="profiles" title="QUẢN LÝ TÀI KHOẢN — DANH SÁCH" rows={profiles.data ?? []} error={profiles.error?.message} fields={['id','username','role','blocked','created_at']} />
     <GridSection id="tickets-overview" title="SỐ DƯ LƯỢT GACHA" rows={balances.data ?? []} error={balances.error?.message} fields={['user_id','normal_available','gold_available']} />
     <GridSection id="spins-overview" title="KẾT QUẢ QUAY" rows={spins.data ?? []} error={spins.error?.message} fields={['id','user_id','kind','gift_item_id','created_at']} />
-    <GridSection id="gift-types-overview" title="QUẢN LÝ QUÀ VÀ XÁC SUẤT" rows={types.data ?? []} error={types.error?.message} fields={['name','rarity','stock_total','stock_issued','normal_weight','gold_weight','active']} />
+    <GridSection id="gift-types-overview" kind="gift_types" title="QUẢN LÝ QUÀ VÀ XÁC SUẤT" rows={types.data ?? []} error={types.error?.message} fields={['name','rarity','stock_total','stock_issued','normal_weight','gold_weight','active']} />
     <GridSection id="gift-items-overview" title="QUÀ ĐÃ PHÁT HÀNH" rows={gifts.data ?? []} error={gifts.error?.message} fields={['code','gift_type_id','owner_id','source','created_at']} />
     <GridSection id="trade-overview" title="TRADE — DANH SÁCH" rows={listings.data ?? []} error={listings.error?.message} fields={['id','owner_id','wanted_description','status','created_at']} />
     <GridSection id="offers-overview" title="TRADE — ĐỀ NGHỊ" rows={offers.data ?? []} error={offers.error?.message} fields={['id','listing_id','offered_by','status','created_at']} />
-    <GridSection id="community-overview" title="GIAO LƯU — BÀI VIẾT" rows={posts.data ?? []} error={posts.error?.message} fields={['id','author_id','title','hidden','created_at']} />
-    <GridSection id="love-overview" title="THƯ GỬI TRANG" rows={letters.data ?? []} error={letters.error?.message} fields={['id','author_id','body','hidden','is_private','created_at']} />
+    <GridSection id="community-overview" kind="posts" title="GIAO LƯU — BÀI VIẾT" rows={posts.data ?? []} error={posts.error?.message} fields={['id','author_id','title','hidden','created_at']} />
+    <GridSection id="love-overview" kind="letters" title="THƯ GỬI TRANG" rows={letters.data ?? []} error={letters.error?.message} fields={['id','author_id','body','hidden','is_private','created_at']} />
   </>;
 }
