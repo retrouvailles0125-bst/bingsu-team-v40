@@ -152,6 +152,36 @@ export async function GET() {
     html = html.replace(from, to);
   }
 
+  // Phase 1 migration: route interactive modules to their Supabase-backed
+  // Next.js pages. The V40 demo functions must not create fake localStorage
+  // spins, trades or love messages in the live app.
+  const legacyShow = "function show(t){if(t==='community')t='home';if(spinning)return;";
+  if (!html.includes(legacyShow)) {
+    throw new Error('Không tìm thấy điều hướng V40.');
+  }
+  html = html.replace(
+    legacyShow,
+    "function show(t){const backendRoutes={spin:'/star',trade:'/trade',love:'/love',tracking:'/tracking',admin:'/admin'};if(backendRoutes[t]){window.location.assign(backendRoutes[t]);return}if(t==='community')t='home';if(spinning)return;"
+  );
+
+  // Disable the legacy browser-only settlement process. Server-side donation
+  // verification is the sole authority for donation state and ticket credit.
+  const legacySettle = "function render(){settle();";
+  if (!html.includes(legacySettle)) {
+    throw new Error('Không tìm thấy tự xác minh Donate demo.');
+  }
+  html = html.replace(legacySettle, "function render(){");
+
+  // Project detail must show the same verified Supabase total as the homepage.
+  const legacyProjectTotal = "money(ds.reduce((a,d)=>a+Number(d.actual||0),0))";
+  if (!html.includes(legacyProjectTotal)) {
+    throw new Error('Không tìm thấy tổng Donate của chi tiết Project.');
+  }
+  html = html.replace(
+    legacyProjectTotal,
+    "money((window.__bstProjectDonationTotals && window.__bstProjectDonationTotals[p.id]) || 0)"
+  );
+
   // The original V40 hides Spin and Trade navigation when email is empty.
   // Keep navigation visible for guests; access is still gated by login.
   const hideGuestNav = "if(b.dataset.tab==='spin'||b.dataset.tab==='trade')b.classList.toggle('hidden',!email)";
