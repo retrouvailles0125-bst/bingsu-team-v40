@@ -5,8 +5,11 @@ import AdminDonateDashboard from './AdminDonateDashboard';
 import AdminOtpForm from './AdminOtpForm';
 import AdminProjects from './AdminProjects';
 import AdminGachaSettings from './AdminGachaSettings';
+import AdminDataOverview from './AdminDataOverview';
 
 export const dynamic = 'force-dynamic';
+
+const overviewLinks: Record<string, string> = { 'Quản lý tài khoản': '#accounts-overview', 'Tặng lượt quay': '#tickets-overview', 'Xác suất Gacha': '#gift-types-overview', 'Quản lý quà': '#gift-items-overview', 'Kết quả quay': '#spins-overview', 'Trade & Gift': '#trade-overview', 'Giao lưu & Thư gửi Trang': '#community-overview' };
 
 const adminModules = [
   {
@@ -184,6 +187,8 @@ export default async function AdminPage() {
                 <a href="#project-management">Mở quản lý Project · Supabase</a>
               ) : module.title === 'Cài đặt vòng xoay' ? (
                 <a href="#gacha-settings">Mở cài đặt vòng xoay · Supabase</a>
+              ) : overviewLinks[module.title] ? (
+                <a href={overviewLinks[module.title]}>Xem dữ liệu Supabase · Chưa hỗ trợ chỉnh sửa</a>
               ) : (
                 <span style={{ fontSize: 12, color: '#777' }}>Chưa kết nối Supabase</span>
               )}
@@ -194,6 +199,7 @@ export default async function AdminPage() {
 
       <AdminGachaSettings settings={settingsResult.data ?? null} />
       <AdminProjects projects={projectsResult.data ?? []} />
+      <AdminDataOverview />
 
       <section
         className="panel"
