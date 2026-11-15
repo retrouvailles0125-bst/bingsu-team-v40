@@ -6,10 +6,11 @@ import AdminOtpForm from './AdminOtpForm';
 import AdminProjects from './AdminProjects';
 import AdminGachaSettings from './AdminGachaSettings';
 import AdminDataOverview from './AdminDataOverview';
+import AdminTicketGrants from './AdminTicketGrants';
 
 export const dynamic = 'force-dynamic';
 
-const overviewLinks: Record<string, string> = { 'Quản lý tài khoản': '#accounts-overview', 'Tặng lượt quay': '#tickets-overview', 'Xác suất Gacha': '#gift-types-overview', 'Quản lý quà': '#gift-items-overview', 'Kết quả quay': '#spins-overview', 'Trade & Gift': '#trade-overview', 'Giao lưu & Thư gửi Trang': '#community-overview' };
+const overviewLinks: Record<string, string> = { 'Quản lý tài khoản': '#accounts-overview', 'Tặng lượt quay': '#grant-tickets', 'Xác suất Gacha': '#gift-types-overview', 'Quản lý quà': '#gift-items-overview', 'Kết quả quay': '#spins-overview', 'Trade & Gift': '#trade-overview', 'Giao lưu & Thư gửi Trang': '#community-overview' };
 
 const adminModules = [
   {
@@ -205,6 +206,7 @@ export default async function AdminPage() {
       <section className="panel" id="admin-pending"><p>Ngân hàng & QR Donate và Báo cáo Excel đang được phát triển. Chưa có thao tác lưu dữ liệu cho hai module này.</p></section>
       <AdminGachaSettings settings={settingsResult.data ?? null} />
       <AdminProjects projects={projectsResult.data ?? []} />
+      <AdminTicketGrants profiles={(await db.from('profiles').select('id,username,blocked,role').order('created_at',{ascending:false}).limit(500)).data ?? []} />
       <AdminDataOverview />
 
       <section
