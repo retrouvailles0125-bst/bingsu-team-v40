@@ -66,13 +66,15 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
 
   const dataSections=['accounts-overview','tickets-overview','spins-overview','gift-types-overview','gift-items-overview','trade-overview','offers-overview','community-overview','replies-overview','love-overview'];
   const isDataSection=dataSections.includes(section);
-  const [donationsResult,settingsResult,projectsResult,grantProfiles,grantHistory,bankResult]=await Promise.all([
-    section==='donate-management'?db.from('donations').select('id,user_id,project_id,declared_amount,received_amount,status,created_at,verified_at,verification_ready_at,normal_tickets,gold_tickets,allocation_choice,allocation_completed_at,projects(name)').order('created_at',{ascending:false}).limit(100):Promise.resolve({data:[],error:null}),
-    ['donate-management','gacha-settings'].includes(section)?db.from('gacha_exchange_settings').select('normal_rate,gold_rate,verify_wait_seconds').eq('id',true).single():Promise.resolve({data:null,error:null}),
-    section==='project-management'?db.from('projects').select('id,name,description,is_open').order('created_at',{ascending:false}):Promise.resolve({data:[],error:null}),
-    section==='grant-tickets'?db.from('profiles').select('id,username,blocked,role').order('created_at',{ascending:false}).limit(500):Promise.resolve({data:[],error:null}),
-    section==='grant-tickets'?db.from('admin_ticket_grants').select('id,recipient_id,actor_id,normal_count,gold_count,reason,created_at').order('created_at',{ascending:false}).limit(100):Promise.resolve({data:[],error:null}),
-    section==='bank-settings'?db.from('bst_donation_bank_settings').select('bank_name,account_name,account_number,qr_image_url,instructions').eq('id',true).maybeSingle():Promise.resolve({data:null,error:null}),
+  const [donationsResult, settingsResult, projectsResult] = await Promise.all([
+    db.from('donations').select('id,user_id,project_id,declared_amount,received_amount,status,created_at,verified_at,verification_ready_at,normal_tickets,gold_tickets,allocation_choice,allocation_completed_at,projects(name)').order('created_at',{ascending:false}).limit(100),
+    db.from('gacha_exchange_settings').select('normal_rate,gold_rate,verify_wait_seconds').eq('id',true).single(),
+    db.from('projects').select('id,name,description,is_open').order('created_at',{ascending:false}),
+  ]);
+  const [grantProfiles,grantHistory,bankResult] = await Promise.all([
+    db.from('profiles').select('id,username,blocked,role').order('created_at',{ascending:false}).limit(500),
+    db.from('admin_ticket_grants').select('id,recipient_id,actor_id,normal_count,gold_count,reason,created_at').order('created_at',{ascending:false}).limit(100),
+    db.from('bst_donation_bank_settings').select('bank_name,account_name,account_number,qr_image_url,instructions').eq('id',true).maybeSingle(),
   ]);
 
   return (
