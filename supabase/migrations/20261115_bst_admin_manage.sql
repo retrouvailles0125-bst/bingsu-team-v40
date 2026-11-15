@@ -30,6 +30,9 @@ BEGIN
   ELSIF p_action = 'community_post.hide' THEN
     UPDATE public.community_posts SET hidden=(p_payload->>'hidden')::boolean
     WHERE id=p_target RETURNING jsonb_build_object('id',id,'hidden',hidden) INTO v_row;
+  ELSIF p_action = 'community_reply.hide' THEN
+    UPDATE public.community_replies SET hidden=(p_payload->>'hidden')::boolean
+    WHERE id=p_target RETURNING jsonb_build_object('id',id,'hidden',hidden) INTO v_row;
   ELSIF p_action = 'love_message.hide' THEN
     UPDATE public.love_messages SET hidden=(p_payload->>'hidden')::boolean
     WHERE id=p_target RETURNING jsonb_build_object('id',id,'hidden',hidden) INTO v_row;
