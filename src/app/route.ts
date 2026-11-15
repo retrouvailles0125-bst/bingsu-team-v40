@@ -116,6 +116,22 @@ export async function GET() {
           console.error('Lỗi đồng bộ Project Supabase:', projectError);
           db.projects = [];
         }
+        // Gift catalog has one authoritative source: Supabase gift_types.
+        // Never fall back to demo localStorage gifts when the RPC is unavailable.
+        db.gifts = [];
+        try {
+          const giftsResponse = await fetch('/api/gifts/catalog', {
+            credentials: 'same-origin',
+            cache: 'no-store'
+          });
+          if (!giftsResponse.ok) throw new Error('Danh mục quà chưa được đồng bộ');
+          const giftPayload = await giftsResponse.json();
+          db.gifts = (giftPayload.gifts || []).map(function(gift) {
+            return {name: gift.name, rarity: gift.rarity};
+          });
+        } catch (giftError) {
+          console.error('Lỗi đồng bộ quà Supabase:', giftError);
+        }
         // Refresh public project totals on each homepage load.
         // If the API is unavailable, show 0 rather than stale localStorage totals.
         window.__bstProjectDonationTotals = Object.create(null);
@@ -204,7 +220,7 @@ export async function GET() {
   }
   html = html.replace(
     legacyStorageListener,
-    "const previousProjects=window.__bstBackendProjects?db.projects:null;db=JSON.parse(e.newValue)||initial();if(previousProjects)db.projects=previousProjects;render()"
+    "const previousProjects=window.__bstBackendProjects?db.projects:null;const previousGifts=db.gifts;db=JSON.parse(e.newValue)||initial();if(previousProjects)db.projects=previousProjects;db.gifts=previousGifts;render()"
   );
 
   // Ensure any old V40 demo project state is never used as a substitute for
