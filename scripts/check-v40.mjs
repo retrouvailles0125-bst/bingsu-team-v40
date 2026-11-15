@@ -9,6 +9,14 @@ if(JSON.stringify(labels)!==JSON.stringify(expected)) throw new Error('V40 navig
 if(JSON.stringify(got)!==JSON.stringify(expected)) throw new Error('Next navigation mismatch');
 if(!existsSync('src/styles/v40-original.css')) throw new Error('Missing original CSS');
 if(existsSync('public/reference')) throw new Error('Reference exposed under public');
+const routes=['src/app/tracking/page.tsx','src/app/star/page.tsx','src/app/trade/page.tsx','src/app/love/page.tsx','src/app/account/page.tsx','src/app/admin/page.tsx'];
+for(const route of routes){if(!existsSync(route))throw new Error('Missing V40 page route: '+route)}
+const onlineLove=readFileSync('src/features/love/LovePage.tsx','utf8');
+if(!onlineLove.includes('bst-v40-jar')||!onlineLove.includes("db.rpc('love_message_total')"))throw new Error('Love page lost message jar or live total');
+const onlineStar=readFileSync('src/features/star/StarPage.tsx','utf8');
+if(!onlineStar.includes('bst-v40-star-stage')||onlineStar.includes('segmented-wheel'))throw new Error('Star wishing stage regression');
+const admin=readFileSync('src/app/admin/page.tsx','utf8');
+if(!admin.includes('requireAdminAccess()'))throw new Error('Admin OTP gate missing');
 const hash=createHash('sha256').update(source).digest('hex');
-console.log('PASS: 7 V40 menus match Next config; original CSS present; private reference path.');
+console.log('PASS: 7 V40 menus, 6 online routes, Love jar, star stage, admin OTP gate and private reference.');
 console.log('V40 SHA256:',hash);
