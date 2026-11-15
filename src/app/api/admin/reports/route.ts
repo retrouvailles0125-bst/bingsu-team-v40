@@ -40,9 +40,6 @@ export async function GET(req:Request) {
    }
   }
  };
- // The dynamic table name would create an unrepresentable union of Supabase query types.
- // Narrow the query builder at this API boundary; selected columns are explicitly allowlisted above.
- const reportDb = supabase as unknown as {from:(name:string)=>{select:(columns:string)=>{order:(column:string,options:{ascending:boolean})=>{range:(start:number,end:number)=>PromiseLike<{data:unknown[]|null;error:{message:string}|null}>}}}};
  const columns=fields.split(',');
  const limit=5000, pageSize=500;
  const rows:Record<string,unknown>[]=[];
