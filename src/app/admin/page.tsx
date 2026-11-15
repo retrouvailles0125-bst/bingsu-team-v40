@@ -19,8 +19,8 @@ const adminModules = [
     description: 'Tài khoản Kandee, chặn đăng nhập và thông báo.',
   },
   {
-    title: 'Cài đặt vòng xoay',
-    description: 'Tỷ lệ lượt quay và thời gian Gacha.',
+    title: 'Cài đặt Gacha',
+    description: 'Tỷ lệ đổi lượt và thời gian xác minh Gacha.',
   },
   {
     title: 'Quản lý Project',
@@ -40,7 +40,7 @@ const adminModules = [
   },
   {
     title: 'Quản lý quà',
-    description: 'Danh sách quà và tồn kho.',
+    description: 'Danh sách quà đã phát hành và tồn kho theo loại.',
   },
   {
     title: 'Kết quả quay',
@@ -48,7 +48,7 @@ const adminModules = [
   },
   {
     title: 'Trade & Gift',
-    description: 'Theo dõi giao dịch Trade và tặng quà.',
+    description: 'Theo dõi bài đăng và đề nghị Trade; chức năng tặng quà riêng chưa hoàn thiện.',
   },
   {
     title: 'Giao lưu & Thư gửi Trang',
@@ -176,7 +176,7 @@ export default async function AdminPage() {
 
           {adminModules.map((module) => (
             <a
-              href={module.title === 'Quản lý Project' ? '#project-management' : module.title === 'Cài đặt vòng xoay' ? '#gacha-settings' : overviewLinks[module.title] || '#admin-pending'}
+              href={module.title === 'Quản lý Project' ? '#project-management' : module.title === 'Cài đặt Gacha' ? '#gacha-settings' : overviewLinks[module.title] || '#admin-pending'}
               key={module.title}
               style={{
                 padding: 18,
@@ -197,8 +197,8 @@ export default async function AdminPage() {
               </p>
               {module.title === 'Quản lý Project' ? (
                 <span>Mở quản lý Project · Supabase</span>
-              ) : module.title === 'Cài đặt vòng xoay' ? (
-                <span>Mở cài đặt vòng xoay · Supabase</span>
+              ) : module.title === 'Cài đặt Gacha' ? (
+                <span>Mở cài đặt Gacha · Supabase</span>
               ) : overviewLinks[module.title] ? (
                 <span>Mở quản lý · Supabase</span>
               ) : (
