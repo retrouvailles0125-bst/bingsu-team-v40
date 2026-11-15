@@ -29,6 +29,17 @@ export async function GET(req:Request) {
  if(!kind||!Object.prototype.hasOwnProperty.call(reports,kind))
   return NextResponse.json({error:'Loại báo cáo không hợp lệ'},{status:400});
  const {table,fields}=reports[kind];
+ // The table name is selected from a server-owned allowlist. Narrow the dynamic
+ // Supabase query builder to avoid TS2590 from its large union of table schemas.
+ const reportDb = supabase as unknown as {
+  from: (name:string)=>{
+   select:(columns:string)=>{
+    order:(column:string,options:{ascending:boolean})=>{
+     range:(from:number,to:number)=>Promise<{data:Record<string,unknown>[]|null;error:{message:string}|null}>
+    }
+   }
+  }
+ };
  // The dynamic table name would create an unrepresentable union of Supabase query types.
  // Narrow the query builder at this API boundary; selected columns are explicitly allowlisted above.
  const reportDb = supabase as unknown as {from:(name:string)=>{select:(columns:string)=>{order:(column:string,options:{ascending:boolean})=>{range:(start:number,end:number)=>PromiseLike<{data:unknown[]|null;error:{message:string}|null}>}}}};
