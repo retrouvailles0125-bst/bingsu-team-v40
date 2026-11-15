@@ -8,7 +8,10 @@ export default function Donate(){
  const [projects,setProjects]=useState<Project[]>([]),[project,setProject]=useState(''),[projectError,setProjectError]=useState('');
  const [bank,setBank]=useState<Bank|null>(null),[bankError,setBankError]=useState('');
  const [mode,setMode]=useState<'not_paid'|'paid'>('not_paid'),[amount,setAmount]=useState(''),[kandee,setKandee]=useState(''),[bst,setBst]=useState('');
- const [files,setFiles]=useState<File[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ const [files,setFiles]=useState<File[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[reference,setReference]=useState(''),[copied,setCopied]=useState('');
+ const numericAmount=Number(amount.replace(/\D/g,''));
+ const validAmount=Number.isSafeInteger(numericAmount)&&numericAmount>0&&numericAmount<=1000000000;
+ async function copyValue(value:string){try{await navigator.clipboard.writeText(value);setCopied('Đã sao chép vào clipboard.')}catch{setCopied('Không thể sao chép tự động. Vui lòng sao chép thủ công.')}}
  useEffect(()=>{
   let live=true;
   Promise.allSettled([
@@ -24,7 +27,9 @@ export default function Donate(){
   return()=>{live=false};
  },[]);
  async function submit(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();setMessage('');
+  e.preventDefault();if(busy)return;setMessage('');setReference('');
+  if(!validAmount){setMessage('Số tiền phải từ 1 đến 1.000.000.000 VND.');return}
+  if(files.some(f=>f.size===0||f.size>5*1024*1024||!['image/jpeg','image/png','image/webp','application/pdf'].includes(f.type))){setMessage('Mỗi bill phải là JPG, PNG, WebP hoặc PDF, không quá 5 MB.');return}
   if(mode!=='paid'){setMessage('Vui lòng hoàn tất chuyển khoản và chọn ĐÃ CHUYỂN KHOẢN trước khi gửi khai báo.');return}
   if(files.length<1||files.length>3){setMessage('Cần 1–3 bill chuyển khoản.');return}
   if(!projects.some(p=>p.id===project)){setMessage('Project không còn mở Donate.');return}
@@ -35,7 +40,7 @@ export default function Donate(){
    const response=await fetch('/api/donations',{method:'POST',body});
    const result=await response.json();
    if(!response.ok)throw Error(result.error||'Không gửi được Donate');
-   setMessage('Đã gửi khai báo '+result.id+'. Trạng thái đang chờ BST đối soát; chưa cấp lượt quay.');
+   setReference(result.id);setMessage('Đã gửi khai báo. Trạng thái đang chờ BST đối soát; chưa cấp lượt quay.');
    setFiles([]);
   }catch(e){setMessage(e instanceof Error?e.message:'Không gửi được Donate.')}finally{setBusy(false)}
  }
@@ -54,12 +59,13 @@ export default function Donate(){
     {bankError&&<p role="alert" className="error">{bankError}</p>}
     {bank&&(bank.bank_name||bank.account_number)?<>
       <p><strong>Ngân hàng:</strong> {bank.bank_name||'—'}</p><p><strong>Chủ tài khoản:</strong> {bank.account_name||'—'}</p>
-      <p><strong>Số tài khoản:</strong> {bank.account_number||'—'} {bank.account_number&&<button type="button" className="secondary" onClick={()=>navigator.clipboard.writeText(bank.account_number)}>SAO CHÉP</button>}</p>
+      <p><strong>Số tài khoản:</strong> {bank.account_number||'—'} {bank.account_number&&<button type="button" className="secondary" onClick={()=>void copyValue(bank.account_number)}>SAO CHÉP</button>}</p>
       {bank.qr_image_url&&<div style={{textAlign:'center',margin:'16px 0'}}><img src={bank.qr_image_url} alt="QR chuyển khoản do BINGSU TEAM cung cấp" style={{width:'min(100%,320px)',height:'auto',borderRadius:14}}/></div>}
       {bank.instructions&&<p style={{whiteSpace:'pre-wrap'}}>{bank.instructions}</p>}
      </>:<p className="muted">BST chưa công bố thông tin chuyển khoản trong hệ thống. Vui lòng kiểm tra với BST trước khi chuyển tiền.</p>}
    </div>
-   {mode==='not_paid'?<div className="note" style={{marginTop:16}}>Bạn có thể xem QR và thông tin chuyển khoản tại đây. Sau khi chuyển khoản thành công, chọn <strong>ĐÃ CHUYỂN KHOẢN</strong> để khai báo. Hệ thống chưa tạo giao dịch hoặc cấp lượt quay ở bước này.</div>:<>
+   {copied&&<p role='status' className='muted'>{copied}</p>}
+   {mode==='not_paid'?<div className='note' style={{marginTop:16}}><h3>CHUẨN BỊ CHUYỂN KHOẢN</h3><label htmlFor='donate-qr-amount'>SỐ TIỀN MUỐN DONATE (VND)</label><input id='donate-qr-amount' inputMode='numeric' value={amount} onChange={e=>setAmount(money(e.target.value))} placeholder='100.000'/><p><strong>Số tiền:</strong> {validAmount?amount+' VND':'Chưa nhập số tiền hợp lệ'}</p><p className='muted'>QR hiện tại là ảnh do BST cấu hình, chưa chứa số tiền tự động. Hãy đối chiếu người nhận, số tài khoản và nhập đúng số tiền trong ứng dụng ngân hàng.</p><p>Sau khi chuyển khoản thành công, chọn <strong>ĐÃ CHUYỂN KHOẢN</strong> để khai báo và tải bill. Bước này chưa tạo giao dịch hoặc cấp lượt quay.</p><button type='button' disabled={!validAmount} onClick={()=>{setMode('paid');setMessage('')}}>TÔI ĐÃ CHUYỂN KHOẢN →</button></div>:<>
     <h2 style={{marginTop:24}}>BƯỚC 2 · KHAI BÁO DONATE ĐÃ CHUYỂN</h2>
     <form onSubmit={submit}>
      <label htmlFor="donate-amount">SỐ TIỀN ĐÃ CHUYỂN (VND)</label><input id="donate-amount" required inputMode="numeric" value={amount} onChange={e=>setAmount(money(e.target.value))} placeholder="100.000"/>
@@ -67,10 +73,10 @@ export default function Donate(){
      <label htmlFor="donate-bst">LỜI NHẮN CHO BINGSU TEAM (KHÔNG BẮT BUỘC)</label><textarea id="donate-bst" rows={4} maxLength={2000} value={bst} onChange={e=>setBst(e.target.value)}/>
      <label htmlFor="donate-bills">BILL CHUYỂN KHOẢN (BẮT BUỘC)</label><input id="donate-bills" required type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" onChange={e=>setFiles(Array.from(e.target.files||[]))}/>
      <p className="muted">Đã chọn {files.length} bill · Tối đa 3 file, 5 MB mỗi file (JPG, PNG, WebP, PDF).</p>
-     <button disabled={busy||!project||!amount||files.length<1||files.length>3}>{busy?'ĐANG GỬI...':'GỬI XÁC NHẬN DONATE'}</button>
+     <button disabled={busy||!project||!validAmount||files.length<1||files.length>3}>{busy?'ĐANG GỬI...':'GỬI XÁC NHẬN DONATE'}</button>
     </form>
    </>}
-   {message&&<p role="status" className="result">{message}</p>}
+   {message&&<p role="status" className="result">{message}</p>}{reference&&<p><strong>Mã khai báo:</strong> <code>{reference}</code> <button type='button' className='secondary' onClick={()=>void copyValue(reference)}>SAO CHÉP MÃ</button></p>}
   </section>
  </main>
 }
