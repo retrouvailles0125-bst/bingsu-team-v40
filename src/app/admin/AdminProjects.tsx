@@ -17,7 +17,8 @@ export default function AdminProjects({projects}:{projects:Project[]}) {
       const response=await fetch('/api/admin/projects',{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(project)});
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'Không thể lưu Project');
-      setMessage('Đã lưu '+result.project.name+' vào Supabase.');
+      setItems(current=>current.map(item=>item.id===result.project.id?result.project:item));
+      setMessage('Đã lưu '+result.project.name+' vào Supabase. Trạng thái: '+(result.project.is_open?'ĐANG MỞ':'ĐÃ ĐÓNG')+'. Homepage sẽ cập nhật khi tải lại.');
       router.refresh();
     } catch(e) {setMessage(e instanceof Error?e.message:'Không thể lưu');}
     finally {setBusy('');}
