@@ -18,10 +18,10 @@ export async function POST(req:Request){
   const file=bills[i];const ext=({'image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/pdf':'pdf'} as Record<string,string>)[file.type];
   const path=`${user.id}/${donation.id}/${crypto.randomUUID()}.${ext}`;
   const {error:uploadError}=await supabase.storage.from('donation-bills').upload(path,file,{contentType:file.type,upsert:false});
-  if(uploadError){await supabase.from('donations').delete().eq('id',donation.id);if(paths.length)await supabase.storage.from('donation-bills').remove(paths);return NextResponse.json({error:'Không tải được bill: '+uploadError.message},{status:500});}
+  if(uploadError){return NextResponse.json({error:'Tải bill chưa hoàn tất. Không gửi lại giao dịch mới; vui lòng liên hệ BST kèm mã khai báo để được hỗ trợ.',donation_id:donation.id,status:'incomplete_upload'},{status:500});}
   paths.push(path);
   const {error:linkError}=await supabase.from('donation_bills').insert({donation_id:donation.id,storage_path:path,uploaded_by:user.id});
-  if(linkError)return NextResponse.json({error:'Bill đã tải lên nhưng lưu liên kết thất bại; liên hệ BST và cung cấp mã '+donation.id},{status:500});
+  if(linkError)return NextResponse.json({error:'Bill đã tải lên nhưng chưa liên kết được. Không gửi lại giao dịch mới; liên hệ BST kèm mã khai báo.',donation_id:donation.id,status:'incomplete_upload'},{status:500});
  }
  return NextResponse.json({id:donation.id,status:donation.status},{status:201});
 }
