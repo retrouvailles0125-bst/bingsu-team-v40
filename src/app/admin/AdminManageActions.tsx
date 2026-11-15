@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Row = Record<string, unknown>;
-type Props = { kind: 'profiles' | 'gift_types' | 'posts' | 'letters'; rows: Row[] };
+type Props = { kind: 'profiles' | 'gift_types' | 'posts' | 'replies' | 'letters'; rows: Row[] };
 export default function AdminManageActions({kind,rows}:Props) {
  const router=useRouter(); const [busy,setBusy]=useState(''); const [message,setMessage]=useState('');
  const [drafts,setDrafts]=useState<Record<string,Record<string,string>>>({});
@@ -44,7 +44,7 @@ export default function AdminManageActions({kind,rows}:Props) {
   return <div key={id} style={{padding:12,border:'1px solid #f0c8df',borderRadius:10}}>
    <strong>{String(row.title||'Thư gửi Trang')}</strong> · {row.hidden?'Đang ẩn':'Đang hiện'}
    <p style={{overflowWrap:'anywhere'}}>{String(row.body??'').slice(0,180)}</p>
-   <button disabled={!!busy} onClick={()=>send({action:kind==='posts'?'community_post.hide':'love_message.hide',target:id,hidden:!row.hidden})}>{row.hidden?'Hiện nội dung':'Ẩn nội dung'}</button>
+   <button disabled={!!busy} onClick={()=>send({action:kind==='posts'?'community_post.hide':kind==='replies'?'community_reply.hide':'love_message.hide',target:id,hidden:!row.hidden})}>{row.hidden?'Hiện nội dung':'Ẩn nội dung'}</button>
   </div>;
  })}
  </div>;
