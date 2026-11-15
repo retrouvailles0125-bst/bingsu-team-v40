@@ -166,6 +166,28 @@ export async function GET() {
   }
   html = html.replace(guestNavGuard, "if((t==='spin'||t==='trade')&&!email){window.location.assign('/login');return}");
 
+  // Legacy V40 listens for localStorage events and replaces the entire database.
+  // Preserve server-backed projects when another tab updates old demo storage.
+  const legacyStorageListener = "db=JSON.parse(e.newValue)||initial();render()";
+  if (!html.includes(legacyStorageListener)) {
+    throw new Error('Không tìm thấy listener localStorage của V40.');
+  }
+  html = html.replace(
+    legacyStorageListener,
+    "const previousProjects=window.__bstBackendProjects?db.projects:null;db=JSON.parse(e.newValue)||initial();if(previousProjects)db.projects=previousProjects;render()"
+  );
+
+  // Ensure any old V40 demo project state is never used as a substitute for
+  // the public Supabase list after the server has supplied that list.
+  const legacyHomeOpen = "const openProjects=db.projects.filter(p=>p.open)";
+  if (!html.includes(legacyHomeOpen)) {
+    throw new Error('Không tìm thấy danh sách Project đang mở của V40.');
+  }
+  html = html.replace(
+    legacyHomeOpen,
+    "const openProjects=db.projects.filter(p=>p.open===true)"
+  );
+
   // Homepage donation totals are read from verified Supabase donations, never legacy browser storage.
   // Keep the original V40 markup; only replace its data source for the metric cards.
   const legacyHomeTotals = "ds.filter(d=>d.projectId===p.id).reduce((a,d)=>a+Number(d.actual||0),0)";
