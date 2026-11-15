@@ -16,6 +16,8 @@ export default async function Account(){
   db.from('gift_items').select('id,code,created_at,gift_types(name,rarity)').eq('owner_id',user.id).order('created_at',{ascending:false}).limit(100)
  ]);
  const ds=(donations.data||[]) as unknown as Array<{id:string;created_at:string;status:string;declared_amount:number;received_amount:number|null;allocation_completed_at:string|null;normal_rate_snapshot:number|null;gold_rate_snapshot:number|null;projects:{name:string}|null}>;
+ const byProject=new Map<string,{amount:number;count:number}>();
+ for(const d of ds.filter(x=>x.status==='verified')){const name=d.projects?.name||'Project';const old=byProject.get(name)||{amount:0,count:0};old.amount+=Number(d.received_amount||0);old.count++;byProject.set(name,old)}
  const items=(gifts.data||[]) as unknown as Array<{id:string;code:string;created_at:string;gift_types:{name:string;rarity:string}|null}>;
  return <main className="bst-v40-page">
   <section className="bst-v40-panel"><Link href="/">← TRANG CHỦ</Link><h1>TÀI KHOẢN CỦA TÔI</h1>
@@ -29,7 +31,7 @@ export default async function Account(){
   </section>
   <AccountSettings username={profile.data?.username||''}/>
   {!donations.error&&<TicketAllocation donations={ds.filter(d=>d.status==='verified'&&!d.allocation_completed_at).map(d=>({id:d.id,received_amount:d.received_amount,normal_rate_snapshot:d.normal_rate_snapshot,gold_rate_snapshot:d.gold_rate_snapshot}))}/>}
-  <section className="bst-v40-panel"><h2>THỐNG KÊ DONATE CỦA TÔI</h2><div className="bst-v40-metric"><h3>TỔNG DONATE ĐÃ XÁC MINH</h3><strong>{formatMoney(ds.filter(d=>d.status==='verified').reduce((sum,d)=>sum+Number(d.received_amount||0),0))}</strong><p className="muted">Tổng trong {ds.length} giao dịch gần nhất.</p></div></section>
+  <section className="bst-v40-panel"><h2>THỐNG KÊ DONATE CỦA TÔI</h2><div className="bst-v40-metric"><h3>TỔNG DONATE ĐÃ XÁC MINH</h3><strong>{formatMoney(ds.filter(d=>d.status==='verified').reduce((sum,d)=>sum+Number(d.received_amount||0),0))}</strong><p className="muted">Tổng trong {ds.length} giao dịch gần nhất.</p></div><h3 style={{marginTop:20}}>THEO TỪNG PROJECT</h3><div className="grid">{[...byProject].map(([name,v])=><div key={name} className="bst-v40-metric"><h3>{name}</h3><p>{v.count} giao dịch Verified</p><strong>{formatMoney(v.amount)}</strong></div>)}{byProject.size===0&&<p className="muted">Chưa có Donate Verified.</p>}</div></section>
   <section className="bst-v40-panel"><h2>LỊCH SỬ DONATE CỦA TÔI</h2>
    {donations.error?<p role="alert" className="error">{donations.error.message}</p>:<div className="scroll"><table><thead><tr><th>NGÀY</th><th>PROJECT</th><th>KHAI BÁO</th><th>THỰC NHẬN</th><th>TRẠNG THÁI</th></tr></thead>
    <tbody>{ds.map(d=><tr key={d.id}><td>{formatDate(d.created_at)}</td><td>{d.projects?.name||'—'}</td><td>{formatMoney(Number(d.declared_amount||0))}</td><td>{d.status==='verified'?formatMoney(Number(d.received_amount||0)):'—'}</td><td><span className="tag">{d.status}</span></td></tr>)}
