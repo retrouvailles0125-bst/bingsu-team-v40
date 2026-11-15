@@ -214,7 +214,7 @@ export default async function AdminPage() {
         <h2>BÁO CÁO — XUẤT DỮ LIỆU</h2>
         <p className="muted">Tải CSV mở bằng Excel; tối đa 5.000 bản ghi gần nhất mỗi loại, yêu cầu Admin OTP.</p>
         <div style={{display:'flex',flexWrap:'wrap',gap:12}}>
-          {(['donations','spins','gifts','transfers','trade'] as const).map(kind=><a key={kind} href={'/api/admin/reports?report='+kind} download style={{padding:12,border:'1px solid #e12589',borderRadius:10}}>Xuất {kind.toUpperCase()}</a>)}
+          {(['donations','spins','gifts','transfers','trade','trade_offers','gift_movements','ticket_grants'] as const).map(kind=><a key={kind} href={'/api/admin/reports?report='+kind} download style={{padding:12,border:'1px solid #e12589',borderRadius:10}}>Xuất {kind.toUpperCase()}</a>)}
         </div>
       </section>
       <AdminGachaSettings settings={settingsResult.data ?? null} />
