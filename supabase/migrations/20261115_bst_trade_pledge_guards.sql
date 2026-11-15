@@ -13,6 +13,7 @@ begin
  select count(*) into n from public.gift_items where id=any(items) and owner_id=uid;
  if n<>array_length(items,1) then raise exception 'Gift ownership mismatch'; end if;
  if exists(select 1 from public.trade_listing_items li join public.trade_listings tl on tl.id=li.listing_id where li.gift_item_id=any(items) and tl.status='open') then raise exception 'Offered gift already listed'; end if;
+ if exists(select 1 from public.trade_offer_items oi join public.trade_offers existing_o on existing_o.id=oi.offer_id join public.trade_listings existing_l on existing_l.id=existing_o.listing_id where oi.gift_item_id=any(items) and existing_o.status='pending' and existing_l.status='open') then raise exception 'Offered gift already committed to another pending offer'; end if;
  insert into public.trade_offers(listing_id,offered_by) values(listing,uid) returning id into oid;
  insert into public.trade_offer_items(offer_id,gift_item_id) select oid,unnest(items);
  return oid;
