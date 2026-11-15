@@ -98,3 +98,14 @@
 .bst-v40-love-letter button{width:100%;text-align:left;white-space:normal}
 .bst-v40-love-empty{padding:32px;text-align:center;border:1px dashed #e9b3d2;border-radius:18px;background:#fff7fb;color:#a64b7e}
 @media(max-width:640px){.bst-v40-love-letter{width:100%;margin:8px 0}.bst-v40-love-compose{padding:15px}}
+
+/* V40 original message jar interaction and Trang access panel */
+.bst-v40-jar-button{display:block;margin:0 auto;padding:0;border:0;background:transparent;cursor:pointer;border-radius:32px}
+.bst-v40-jar-button:focus-visible{outline:3px solid #e12589;outline-offset:8px}
+.bst-v40-jar-button:disabled{cursor:default;opacity:.9}
+.bst-v40-jar-button:not(:disabled):hover .bst-v40-jar{transform:translateY(-5px) rotate(-2deg);transition:transform .25s}
+.bst-v40-trang-access{margin-top:28px;padding:22px;border:1px solid #edc5dd;border-radius:18px;background:#fff8fc}
+.bst-v40-trang-access h2{color:#ba2979;font-size:19px}
+.bst-v40-trang-pass-row{display:flex;gap:10px;flex-wrap:wrap}
+.bst-v40-trang-pass-row input{flex:1;min-width:170px;padding:12px;border:1px solid #e7b8d3;border-radius:12px}
+.bst-v40-trang-pass-row button:disabled{opacity:.6;cursor:not-allowed}
