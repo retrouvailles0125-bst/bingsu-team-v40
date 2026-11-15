@@ -7,7 +7,9 @@ export async function POST(req:Request){
  const form=await req.formData().catch(()=>null);if(!form)return NextResponse.json({error:'Form không hợp lệ'},{status:400});
  const input=schema.safeParse({project_id:form.get('project_id'),declared_amount:form.get('declared_amount'),kandee_message:form.get('kandee_message')||'',bst_message:form.get('bst_message')||''});
  if(!input.success)return NextResponse.json({error:'Thông tin Donate không hợp lệ'},{status:400});
- const bills=form.getAll('bills').filter((f):f is File=>f instanceof File);
+ const rawBills=form.getAll('bills');
+ if(rawBills.some(f=>!(f instanceof File)))return NextResponse.json({error:'Danh sách bill chứa dữ liệu không hợp lệ'},{status:400});
+ const bills=rawBills as File[];
  if(bills.length<1||bills.length>3)return NextResponse.json({error:'Bắt buộc 1–3 bill'},{status:400});
  if(bills.some(f=>f.size>5*1024*1024||f.size===0||!['image/jpeg','image/png','image/webp','application/pdf'].includes(f.type)))return NextResponse.json({error:'Bill không hợp lệ hoặc quá 5 MB'},{status:400});
  const {data:project}=await supabase.from('projects').select('id').eq('id',input.data.project_id).eq('is_open',true).maybeSingle();if(!project)return NextResponse.json({error:'Project đã đóng hoặc không tồn tại'},{status:400});
