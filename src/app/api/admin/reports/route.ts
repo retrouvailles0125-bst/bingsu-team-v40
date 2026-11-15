@@ -29,11 +29,14 @@ export async function GET(req:Request) {
  if(!kind||!Object.prototype.hasOwnProperty.call(reports,kind))
   return NextResponse.json({error:'Loại báo cáo không hợp lệ'},{status:400});
  const {table,fields}=reports[kind];
+ // The dynamic table name would create an unrepresentable union of Supabase query types.
+ // Narrow the query builder at this API boundary; selected columns are explicitly allowlisted above.
+ const reportDb = supabase as unknown as {from:(name:string)=>{select:(columns:string)=>{order:(column:string,options:{ascending:boolean})=>{range:(start:number,end:number)=>PromiseLike<{data:unknown[]|null;error:{message:string}|null}>}}}};
  const columns=fields.split(',');
  const limit=5000, pageSize=500;
  const rows:Record<string,unknown>[]=[];
  for(let start=0;start<limit;start+=pageSize) {
-  const {data,error}=await supabase.from(table).select(fields).order('created_at',{ascending:false}).range(start,start+pageSize-1);
+  const {data,error}=await reportDb.from(table).select(fields).order('created_at',{ascending:false}).range(start,start+pageSize-1);
   if(error)return NextResponse.json({error:error.message},{status:403});
   const page=(data??[]) as unknown as Record<string,unknown>[];
   rows.push(...page);
