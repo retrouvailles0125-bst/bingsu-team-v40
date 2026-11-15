@@ -7,10 +7,11 @@ import AdminProjects from './AdminProjects';
 import AdminGachaSettings from './AdminGachaSettings';
 import AdminDataOverview from './AdminDataOverview';
 import AdminTicketGrants from './AdminTicketGrants';
+import AdminBankSettings from './AdminBankSettings';
 
 export const dynamic = 'force-dynamic';
 
-const overviewLinks: Record<string, string> = { 'Quản lý tài khoản': '#accounts-overview', 'Tặng lượt quay': '#grant-tickets', 'Xác suất Gacha': '#gift-types-overview', 'Quản lý quà': '#gift-items-overview', 'Kết quả quay': '#spins-overview', 'Trade & Gift': '#trade-overview', 'Giao lưu & Thư gửi Trang': '#community-overview', 'Báo cáo Excel': '#admin-reports' };
+const overviewLinks: Record<string, string> = { 'Quản lý tài khoản': '#accounts-overview', 'Tặng lượt quay': '#grant-tickets', 'Xác suất Gacha': '#gift-types-overview', 'Quản lý quà': '#gift-items-overview', 'Kết quả quay': '#spins-overview', 'Trade & Gift': '#trade-overview', 'Giao lưu & Thư gửi Trang': '#community-overview', 'Báo cáo Excel': '#admin-reports', 'Ngân hàng & QR Donate': '#bank-settings' };
 
 const adminModules = [
   {
@@ -203,7 +204,7 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      <section className="panel" id="admin-pending"><p>Ngân hàng & QR Donate đang được phát triển. Chưa có thao tác lưu dữ liệu cho module này.</p></section>
+      <AdminBankSettings initial={(await db.from('bst_donation_bank_settings').select('bank_name,account_name,account_number,qr_image_url,instructions').eq('id',true).maybeSingle()).data ?? null} />
       <section className="panel" id="admin-reports" style={{scrollMarginTop:24}}>
         <h2>BÁO CÁO — XUẤT DỮ LIỆU</h2>
         <p className="muted">Tải CSV mở bằng Excel; tối đa 5.000 bản ghi gần nhất mỗi loại, yêu cầu Admin OTP.</p>
