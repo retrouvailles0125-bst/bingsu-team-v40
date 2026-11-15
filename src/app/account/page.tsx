@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {redirect} from 'next/navigation';
 import {supabaseServer} from '@/lib/supabase';
 import {formatMoney,formatDate} from '@/config/site';
+import AccountSettings from '@/features/account/AccountSettings';
 export const dynamic='force-dynamic';
 export default async function Account(){
  const db=await supabaseServer();
@@ -25,6 +26,8 @@ export default async function Account(){
    </div>
    <p style={{marginTop:18}}><Link href="/star">NGÔI SAO MAY MẮN</Link> · <Link href="/trade">SÀN TRADE GIFT</Link> · <Link href="/logout">ĐĂNG XUẤT</Link></p>
   </section>
+  <AccountSettings username={profile.data?.username||''}/>
+  <section className="bst-v40-panel"><h2>THỐNG KÊ DONATE CỦA TÔI</h2><div className="bst-v40-metric"><h3>TỔNG DONATE ĐÃ XÁC MINH</h3><strong>{formatMoney(ds.filter(d=>d.status==='verified').reduce((sum,d)=>sum+Number(d.received_amount||0),0))}</strong><p className="muted">Tổng trong {ds.length} giao dịch gần nhất.</p></div></section>
   <section className="bst-v40-panel"><h2>LỊCH SỬ DONATE CỦA TÔI</h2>
    {donations.error?<p role="alert" className="error">{donations.error.message}</p>:<div className="scroll"><table><thead><tr><th>NGÀY</th><th>PROJECT</th><th>KHAI BÁO</th><th>THỰC NHẬN</th><th>TRẠNG THÁI</th></tr></thead>
    <tbody>{ds.map(d=><tr key={d.id}><td>{formatDate(d.created_at)}</td><td>{d.projects?.name||'—'}</td><td>{formatMoney(Number(d.declared_amount||0))}</td><td>{d.status==='verified'?formatMoney(Number(d.received_amount||0)):'—'}</td><td><span className="tag">{d.status}</span></td></tr>)}
