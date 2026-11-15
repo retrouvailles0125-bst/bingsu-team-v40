@@ -1,5 +1,6 @@
 import { supabaseServer } from '@/lib/supabase';
 import AdminManageActions from './AdminManageActions';
+import AdminGiftCreate from './AdminGiftCreate';
 
 type Row = Record<string, unknown>;
 function GridSection({ id, title, rows, error, fields, kind }: {
@@ -39,6 +40,7 @@ export default async function AdminDataOverview({section}:{section:string}) {
     {section==='accounts-overview' && <GridSection id="accounts-overview" kind="profiles" title="QUẢN LÝ TÀI KHOẢN — DANH SÁCH" rows={profiles.data ?? []} error={profiles.error?.message} fields={['id','username','role','blocked','created_at']} />}
     {section==='tickets-overview' && <GridSection id="tickets-overview" title="SỐ DƯ LƯỢT GACHA" rows={balances.data ?? []} error={balances.error?.message} fields={['user_id','normal_available','gold_available']} />}
     {section==='spins-overview' && <GridSection id="spins-overview" title="KẾT QUẢ QUAY" rows={spins.data ?? []} error={spins.error?.message} fields={['id','user_id','kind','gift_item_id','created_at']} />}
+    {section==='gift-types-overview' && <AdminGiftCreate />}
     {section==='gift-types-overview' && <GridSection id="gift-types-overview" kind="gift_types" title="QUẢN LÝ QUÀ VÀ XÁC SUẤT" rows={types.data ?? []} error={types.error?.message} fields={['name','rarity','stock_total','stock_issued','normal_weight','gold_weight','active']} />}
     {section==='gift-items-overview' && <GridSection id="gift-items-overview" title="QUÀ ĐÃ PHÁT HÀNH" rows={gifts.data ?? []} error={gifts.error?.message} fields={['code','gift_type_id','owner_id','source','created_at']} />}
     {section==='trade-overview' && <GridSection id="trade-overview" title="TRADE — DANH SÁCH" rows={listings.data ?? []} error={listings.error?.message} fields={['id','owner_id','wanted_description','status','created_at']} />}
