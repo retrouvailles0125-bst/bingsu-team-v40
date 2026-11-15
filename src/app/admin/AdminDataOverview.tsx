@@ -3,7 +3,7 @@ import AdminManageActions from './AdminManageActions';
 
 type Row = Record<string, unknown>;
 function GridSection({ id, title, rows, error, fields, kind }: {
-  id: string; title: string; rows: Row[]; error?: string; fields: string[]; kind?: 'profiles' | 'gift_types' | 'posts' | 'letters';
+  id: string; title: string; rows: Row[]; error?: string; fields: string[]; kind?: 'profiles' | 'gift_types' | 'posts' | 'replies' | 'letters';
 }) {
   return <section className="panel" id={id} style={{ scrollMarginTop: 24 }}>
     <h2>{title}</h2>
@@ -23,7 +23,7 @@ function GridSection({ id, title, rows, error, fields, kind }: {
 
 export default async function AdminDataOverview() {
   const db = await supabaseServer();
-  const [profiles, balances, spins, gifts, types, listings, offers, posts, letters] = await Promise.all([
+  const [profiles, balances, spins, gifts, types, listings, offers, posts, replies, letters] = await Promise.all([
     db.from('profiles').select('id,username,role,blocked,created_at').limit(100),
     db.from('spin_balances').select('user_id,normal_available,gold_available').limit(100),
     db.from('spin_events').select('id,user_id,kind,gift_item_id,created_at').order('created_at', { ascending: false }).limit(100),
@@ -32,6 +32,7 @@ export default async function AdminDataOverview() {
     db.from('trade_listings').select('id,owner_id,wanted_description,status,created_at').order('created_at', { ascending: false }).limit(100),
     db.from('trade_offers').select('id,listing_id,offered_by,status,created_at').order('created_at', { ascending: false }).limit(100),
     db.from('community_posts').select('id,author_id,title,body,hidden,created_at').order('created_at', { ascending: false }).limit(100),
+    db.from('community_replies').select('id,post_id,author_id,body,hidden,created_at').order('created_at', { ascending: false }).limit(100),
     db.from('love_messages').select('id,author_id,body,hidden,is_private,created_at').order('created_at', { ascending: false }).limit(100),
   ]);
   return <>
@@ -43,6 +44,7 @@ export default async function AdminDataOverview() {
     <GridSection id="trade-overview" title="TRADE — DANH SÁCH" rows={listings.data ?? []} error={listings.error?.message} fields={['id','owner_id','wanted_description','status','created_at']} />
     <GridSection id="offers-overview" title="TRADE — ĐỀ NGHỊ" rows={offers.data ?? []} error={offers.error?.message} fields={['id','listing_id','offered_by','status','created_at']} />
     <GridSection id="community-overview" kind="posts" title="GIAO LƯU — BÀI VIẾT" rows={posts.data ?? []} error={posts.error?.message} fields={['id','author_id','title','hidden','created_at']} />
+    <GridSection id="replies-overview" kind="replies" title="GIAO LƯU — BÌNH LUẬN" rows={replies.data ?? []} error={replies.error?.message} fields={['id','post_id','author_id','body','hidden','created_at']} />
     <GridSection id="love-overview" kind="letters" title="THƯ GỬI TRANG" rows={letters.data ?? []} error={letters.error?.message} fields={['id','author_id','body','hidden','is_private','created_at']} />
   </>;
 }
