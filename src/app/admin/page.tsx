@@ -4,6 +4,7 @@ import { requireAdminAccess } from '@/lib/admin-security';
 import AdminDonateDashboard from './AdminDonateDashboard';
 import AdminOtpForm from './AdminOtpForm';
 import AdminProjects from './AdminProjects';
+import AdminGachaSettings from './AdminGachaSettings';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,6 +182,8 @@ export default async function AdminPage() {
               </p>
               {module.title === 'Quản lý Project' ? (
                 <a href="#project-management">Mở quản lý Project · Supabase</a>
+              ) : module.title === 'Cài đặt vòng xoay' ? (
+                <a href="#gacha-settings">Mở cài đặt vòng xoay · Supabase</a>
               ) : (
                 <span style={{ fontSize: 12, color: '#777' }}>Chưa kết nối Supabase</span>
               )}
@@ -189,6 +192,7 @@ export default async function AdminPage() {
         </div>
       </section>
 
+      <AdminGachaSettings settings={settingsResult.data ?? null} />
       <AdminProjects projects={projectsResult.data ?? []} />
 
       <section
