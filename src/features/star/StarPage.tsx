@@ -46,7 +46,7 @@ export default function Star(){
    <option value="normal">Thường</option><option value="gold">Gold</option>
   </select>
   <label htmlFor="spin-count">SỐ LƯỢT</label><input id="spin-count" type="number" min={1} max={10} value={count} onChange={e=>setCount(Number(e.target.value))} style={{width:100,maxWidth:'100%'}}/>
-  <div className='bst-v40-wheel-shell' aria-label='Vòng xoay ngôi sao may mắn'><div className='bst-v40-wheel-pointer' aria-hidden='true'>▼</div><div className={'bst-v40-wheel'+(busy?' is-spinning':'')}><div className='bst-v40-wheel-center'>✦ ƯỚC NGUYỆN ✦</div></div></div>
+  <div className={'bst-v40-star-stage'+(busy?' wish-anim':'')} aria-label='Ngôi Sao May Mắn'>✦ ☄ ✧</div>
   <p className="muted">Có thể sử dụng: {available??'—'} lượt {kind==='normal'?'Thường':'Gold'}</p>
   <button disabled={busy||signedIn!==true||available===undefined||count<1||count>10||count>available} onClick={wish}>{busy?'ĐANG ƯỚC NGUYỆN...':'ƯỚC NGUYỆN'}</button>
   {message&&<p role="status" className="result">{message}</p>}
