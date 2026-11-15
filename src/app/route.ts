@@ -177,6 +177,16 @@ export async function GET() {
     "(window.__bstProjectDonationTotals && window.__bstProjectDonationTotals[p.id]) || 0"
   );
 
+  // Archived project totals also use the verified Supabase aggregate.
+  const legacyClosedTotals = "db.donations.filter(d=>d.projectId===p.id&&d.status==='Verified').reduce((a,d)=>a+Number(d.actual||0),0)";
+  if (!html.includes(legacyClosedTotals)) {
+    throw new Error('Không tìm thấy tổng Donate của Project đã đóng.');
+  }
+  html = html.replace(
+    legacyClosedTotals,
+    "(window.__bstProjectDonationTotals && window.__bstProjectDonationTotals[p.id]) || 0"
+  );
+
   // V40 gốc gán onclick cho toàn bộ nav button.
   // Vì vậy phải gắn handler Admin sau handler gốc
   // để tránh mở trang Admin demo của V40.
