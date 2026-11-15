@@ -8,6 +8,9 @@ const reports = {
  gifts: {table:'gift_items',fields:'id,gift_type_id,owner_id,code,source,created_at'},
  transfers: {table:'gift_transfers',fields:'id,gift_item_id,sender_id,recipient_id,status,created_at'},
  trade: {table:'trade_listings',fields:'id,owner_id,wanted_description,status,created_at'},
+ ticket_grants: {table:'admin_ticket_grants',fields:'id,recipient_id,actor_id,normal_count,gold_count,reason,created_at'},
+ trade_offers: {table:'trade_offers',fields:'id,listing_id,offered_by,status,created_at'},
+ gift_movements: {table:'gift_movements',fields:'id,gift_item_id,from_user,to_user,reason,related_id,created_at'},
 } as const;
 type ReportKey=keyof typeof reports;
 function csvCell(value:unknown):string {
