@@ -88,3 +88,13 @@
 .bst-v40-tracking-filters label{display:grid;gap:7px;font-size:12px;color:#975777;font-weight:800}
 .bst-v40-tracking-filters input,.bst-v40-tracking-filters select{width:100%;min-width:0;padding:10px;border:1px solid #e8b7d2;border-radius:10px;background:#fff}
 @media(max-width:650px){.bst-v40-tracking-filters{grid-template-columns:1fr 1fr}.bst-v40-tracking-filters label:first-child{grid-column:1/-1}}
+
+/* V40 love letter interactions */
+.bst-v40-love-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:22px auto}
+.bst-v40-love-compose{padding:24px;border:1px solid #f0c5df;border-radius:20px;background:linear-gradient(160deg,#fff9fd,#ffeef8)}
+.bst-v40-love-compose h2,.bst-v40-love-letters h2{color:#b92b7b;text-align:center}
+.bst-v40-love-letters{margin:24px auto}
+.bst-v40-love-letter{display:inline-block;vertical-align:top;width:calc(50% - 16px);margin:8px;padding:16px;border:1px solid #eec3da;border-radius:18px;background:linear-gradient(135deg,#fff,#fff0f8);box-shadow:0 8px 22px #ad3e7e10}
+.bst-v40-love-letter button{width:100%;text-align:left;white-space:normal}
+.bst-v40-love-empty{padding:32px;text-align:center;border:1px dashed #e9b3d2;border-radius:18px;background:#fff7fb;color:#a64b7e}
+@media(max-width:640px){.bst-v40-love-letter{width:100%;margin:8px 0}.bst-v40-love-compose{padding:15px}}
