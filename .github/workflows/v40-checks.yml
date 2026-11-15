@@ -1,0 +1,29 @@
+name: V40 code checks
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/admin-otp-security]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify original V40 navigation and reference
+        run: npm run check:v40
+      - name: TypeScript strict check
+        run: npm run typecheck
