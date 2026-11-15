@@ -62,3 +62,15 @@
 .bst-v40-trade-empty{text-align:center;padding:38px 16px;border:1px dashed #e9b3d2;border-radius:18px;background:#fff8fc}
 .bst-v40-trade-empty span{font-size:44px}.bst-v40-trade-empty h3{color:#bb2e7b}
 @media(max-width:550px){.bst-v40-trade-stats{gap:6px}.bst-v40-trade-stats>div{padding:12px 6px}.bst-v40-trade-stats small{font-size:9px}.bst-v40-trade-stats strong{font-size:23px}.bst-v40-trade-create{padding:14px}}
+
+/* V40 original grouped admin navigation */
+.bst-v40-admin-menu{padding:20px 26px;border:2px solid #efc5dc;border-radius:24px;background:#fff1f8;color:#965474}
+.bst-v40-admin-menu>section{padding:20px 8px;border-bottom:2px solid #efc9df}
+.bst-v40-admin-menu>section:last-child{border-bottom:0}
+.bst-v40-admin-menu h2{font-size:clamp(17px,3vw,23px);letter-spacing:.06em;color:#a35481;margin:0 0 17px}
+.bst-v40-admin-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.bst-v40-admin-menu a{display:block;text-decoration:none;color:#92506f;font-weight:800;font-size:clamp(13px,2.3vw,19px);padding:14px 18px;border-radius:12px;transition:background .2s}
+.bst-v40-admin-menu a:hover,.bst-v40-admin-menu a:focus-visible{background:#fbd7eb;color:#b21871;outline-offset:2px}
+.bst-v40-admin-menu .bst-v40-admin-primary{display:inline-block;color:#fff;background:#e12589;padding:17px 25px;box-shadow:0 6px 14px #d91d8730}
+.bst-v40-admin-menu .bst-v40-admin-primary:hover{background:#bd1670;color:#fff}
+@media(max-width:600px){.bst-v40-admin-menu{padding:10px}.bst-v40-admin-menu>section{padding:16px 4px}.bst-v40-admin-menu-grid{grid-template-columns:1fr 1fr;gap:5px}.bst-v40-admin-menu a{padding:10px 6px;font-size:12px}}
