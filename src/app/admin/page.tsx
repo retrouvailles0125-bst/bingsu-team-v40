@@ -11,55 +11,6 @@ import AdminBankSettings from './AdminBankSettings';
 
 export const dynamic = 'force-dynamic';
 
-const overviewLinks: Record<string, string> = { 'Quản lý tài khoản': '#accounts-overview', 'Tặng lượt quay': '#grant-tickets', 'Xác suất Gacha': '#gift-types-overview', 'Quản lý quà': '#gift-items-overview', 'Kết quả quay': '#spins-overview', 'Trade & Gift': '#trade-overview', 'Giao lưu & Thư gửi Trang': '#community-overview', 'Báo cáo Excel': '#admin-reports', 'Ngân hàng & QR Donate': '#bank-settings' };
-
-const adminModules = [
-  {
-    title: 'Quản lý tài khoản',
-    description: 'Tài khoản Kandee, chặn đăng nhập và thông báo.',
-  },
-  {
-    title: 'Cài đặt Gacha',
-    description: 'Tỷ lệ đổi lượt và thời gian xác minh Gacha.',
-  },
-  {
-    title: 'Quản lý Project',
-    description: 'Thông tin, trạng thái và danh sách Project.',
-  },
-  {
-    title: 'Ngân hàng & QR Donate',
-    description: 'Tài khoản nhận Donate và ảnh QR.',
-  },
-  {
-    title: 'Tặng lượt quay',
-    description: 'Cấp lượt quay cho tài khoản Kandee.',
-  },
-  {
-    title: 'Xác suất Gacha',
-    description: 'Xác suất Normal, Gold và các độ hiếm.',
-  },
-  {
-    title: 'Quản lý quà',
-    description: 'Danh sách quà đã phát hành và tồn kho theo loại.',
-  },
-  {
-    title: 'Kết quả quay',
-    description: 'Lịch sử Gacha và xuất dữ liệu.',
-  },
-  {
-    title: 'Trade & Gift',
-    description: 'Theo dõi bài đăng và đề nghị Trade; chức năng tặng quà riêng chưa hoàn thiện.',
-  },
-  {
-    title: 'Giao lưu & Thư gửi Trang',
-    description: 'Quản lý bài viết, thư và bộ lọc.',
-  },
-  {
-    title: 'Báo cáo Excel',
-    description: 'Xuất dữ liệu đối soát và báo cáo.',
-  },
-];
-
 export default async function AdminPage() {
   const db = await supabaseServer();
 
