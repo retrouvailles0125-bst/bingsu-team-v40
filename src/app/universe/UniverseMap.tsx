@@ -15,6 +15,7 @@ export default function UniverseMap(){
  const router=useRouter();
  const [leaving,setLeaving]=useState(false);
  const [selected,setSelected]=useState('');
+ const [missing,setMissing]=useState<Record<string,boolean>>({});
  function go(href:string,id:string){
   if(leaving)return;
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,9 +26,9 @@ export default function UniverseMap(){
  return <main className={styles.root} aria-label="Bản đồ BST Universe">
   <div className={styles.viewport}>
    <div className={styles.map+(leaving?' '+styles.leaving:'')}>
-    <img className={styles.background} src="/universe/background.png" alt="Bản đồ BST Universe với các con đường màu hồng" />
+    {!missing.background ? <img className={styles.background} src="/universe/background.png" alt="Bản đồ BST Universe với các con đường màu hồng" onError={()=>setMissing(s=>({...s,background:true}))}/> : <div className={styles.fallbackMap}><div className={styles.fallbackLogo}>BST<br/>UNIVERSE<small>ALL FOR TRANGPHAP</small></div><div className={styles.roadOne}/><div className={styles.roadTwo}/><div className={styles.roadThree}/></div>}
     {houses.map(h=><button type="button" key={h.id} className={styles.house+' '+styles[h.id]+(selected===h.id?' '+styles.selected:'')} onClick={()=>go(h.href,h.id)} disabled={leaving} aria-label={h.name+' — '+h.description} title={h.name+' — '+h.description}>
-     <img src={h.image} alt="" draggable={false}/><span className={styles.tooltip}>{h.description}</span>
+     {!missing[h.id] ? <img src={h.image} alt="" draggable={false} onError={()=>setMissing(s=>({...s,[h.id]:true}))}/> : <span className={styles.fallbackHouse}><span aria-hidden="true">⌂</span><strong>{h.name.toUpperCase()}</strong></span>}<span className={styles.tooltip}>{h.description}</span>
     </button>)}
    </div>
   </div>
