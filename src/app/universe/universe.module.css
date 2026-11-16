@@ -12,3 +12,8 @@
 .fallbackHouse{display:grid;place-items:center;aspect-ratio:1.25;background:#fff7e8;border:5px solid #880e29;border-radius:25% 25% 12% 12%;color:#880e29;box-shadow:0 9px 0 #5f142a33;min-height:90px}
 .fallbackHouse>span{font-size:clamp(45px,10vw,110px);line-height:1}
 .fallbackHouse strong{display:block;background:#777;color:white;padding:5px 12px;font-size:clamp(11px,2.5vw,22px);white-space:nowrap;border-radius:4px}
+
+/* Keep the preview visible during asset loading and on 404. */
+.map{background:#ed1688}
+.background{position:absolute;inset:0;z-index:1}
+.fallbackMap{z-index:0}
