@@ -32,9 +32,9 @@ export default function UniverseMap(){
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(reduce){router.push(href);return;}
   setSelected(id);setLeaving(true);
-  window.setTimeout(()=>router.push(href),340);
+  window.setTimeout(()=>router.push(href),200);
  }
- return <main className={styles.root} aria-label="Bản đồ BST Universe">
+ return <main id="bst-universe" className={styles.root} aria-label="Bản đồ BST Universe">
   <div className={styles.viewport}>
    <div className={styles.map+(leaving?' '+styles.leaving:'')}>
     <div className={styles.fallbackMap} aria-hidden="true"><div className={styles.fallbackLogo}>BST<br/>UNIVERSE<small>ALL FOR TRANGPHAP</small></div><div className={styles.roadOne}/><div className={styles.roadTwo}/><div className={styles.roadThree}/></div>
@@ -44,6 +44,5 @@ export default function UniverseMap(){
     </button>)}
    </div>
   </div>
-  <div className={styles.accessibleNav} aria-label="Các khu vực BST Universe">{houses.map(h=><a key={h.id} href={h.href}>{h.name}</a>)}</div>
  </main>
 }
