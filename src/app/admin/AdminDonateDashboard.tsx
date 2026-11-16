@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Donation = {
@@ -19,6 +18,10 @@ type Donation = {
   allocation_choice: string | null;
   allocation_completed_at: string | null;
   projects: { name: string } | { name: string }[] | null;
+  note?: string | null;
+  kandee_message?: string | null;
+  bst_message?: string | null;
+  declaration_fields?: Record<string, unknown> | null;
 };
 
 type Settings = {
@@ -27,13 +30,21 @@ type Settings = {
   verify_wait_seconds: number;
 };
 
+type UserRow = { id: string; username: string | null };
+
+type Bill = {
+  donation_id: string;
+  name: string;
+  url: string | null;
+};
+
 type Props = {
   donations: Donation[];
   settings: Settings | null;
+  users: UserRow[];
+  bills: Bill[];
   initialError: string | null;
 };
-
-type Filter = 'all' | 'pending' | 'processing' | 'verified' | 'rejected';
 
 const money = (value: number | null | undefined) =>
   new Intl.NumberFormat('vi-VN', {
@@ -55,6 +66,41 @@ const dateTime = (value: string | null | undefined) => {
   });
 };
 
+const text = (value: unknown) => {
+  if (value === null || value === undefined || value === '') return '—';
+  return typeof value === 'object' ? JSON.stringify(value) : String(value);
+};
+
+// Chặn công thức Excel (=, +, -, @) khi xuất CSV.
+const csvCell = (value: unknown) => {
+  let s =
+    value === null || value === undefined
+      ? ''
+      : typeof value === 'object'
+        ? JSON.stringify(value)
+        : String(value);
+
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+
+  return `"${s.replace(/"/g, '""')}"`;
+};
+
+const statusLabel: Record<string, string> = {
+  pending: 'Pending',
+  processing: 'Processing',
+  verified: 'Verified',
+  rejected: 'Rejected',
+};
+
+const reference = (donation: Donation) =>
+  donation.id.slice(0, 8).toUpperCase();
+
+// Hai trường có dòng riêng trong cột "Thông tin khai báo".
+const SPECIAL_KEYS = new Set(['phone', 'transfer_date']);
+
+const declared = (donation: Donation, key: string) =>
+  donation.declaration_fields?.[key];
+
 function getProjectName(donation: Donation) {
   const project = donation.projects;
 
@@ -65,10 +111,7 @@ function getProjectName(donation: Donation) {
   return project?.name ?? '—';
 }
 
-function getSecondsLeft(
-  readyAt: string | null,
-  now: number
-): number {
+function getSecondsLeft(readyAt: string | null, now: number): number {
   if (!readyAt) return 0;
 
   const timestamp = new Date(readyAt).getTime();
@@ -93,15 +136,10 @@ function formatCountdown(seconds: number) {
     : mmss;
 }
 
-async function postJSON(
-  url: string,
-  payload: Record<string, unknown>
-) {
+async function postJSON(url: string, payload: Record<string, unknown>) {
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',
     body: JSON.stringify(payload),
   });
@@ -124,41 +162,109 @@ async function postJSON(
 export default function AdminDonateDashboard({
   donations,
   settings,
+  users,
+  bills,
   initialError,
 }: Props) {
   const router = useRouter();
 
-  const [filter, setFilter] = useState<Filter>('all');
+  const [project, setProject] = useState('all');
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState(initialError ?? '');
   const [now, setNow] = useState(() => Date.now());
+  const [labels, setLabels] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const filtered = donations.filter(
-    (donation) =>
-      filter === 'all' || donation.status === filter
+  // Lấy tên hiển thị của các trường khai báo từ cấu hình ở mục Khai báo Donate.
+  useEffect(() => {
+    let alive = true;
+
+    fetch('/api/admin/donate-fields', { cache: 'no-store' })
+      .then(response => response.json())
+      .then(json => {
+        if (!alive || !Array.isArray(json?.settings?.fields)) return;
+
+        const map: Record<string, string> = {};
+
+        (json.settings.fields as { key: string; label: string }[]).forEach(
+          field => {
+            map[field.key] = field.label;
+          }
+        );
+
+        setLabels(map);
+      })
+      .catch(() => {});
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const names = useMemo(
+    () => new Map(users.map(user => [user.id, user.username || '—'])),
+    [users]
   );
 
-  const pending = donations.filter(
-    (donation) => donation.status === 'pending'
-  ).length;
+  const billsByDonation = useMemo(() => {
+    const map = new Map<string, Bill[]>();
 
-  const processing = donations.filter(
-    (donation) => donation.status === 'processing'
-  ).length;
+    bills.forEach(bill => {
+      map.set(bill.donation_id, [
+        ...(map.get(bill.donation_id) ?? []),
+        bill,
+      ]);
+    });
 
-  const verified = donations.filter(
-    (donation) => donation.status === 'verified'
-  ).length;
+    return map;
+  }, [bills]);
+
+  const projectOptions = useMemo(() => {
+    const map = new Map<string, string>();
+
+    donations.forEach(donation => {
+      if (!map.has(donation.project_id)) {
+        map.set(donation.project_id, getProjectName(donation));
+      }
+    });
+
+    return [...map.entries()];
+  }, [donations]);
+
+  const rows = useMemo(
+    () =>
+      donations.filter(
+        donation => project === 'all' || donation.project_id === project
+      ),
+    [donations, project]
+  );
+
+  function preview(amountText: string) {
+    if (!settings || settings.normal_rate <= 0 || settings.gold_rate <= 0) {
+      return null;
+    }
+
+    if (!/^\d+$/.test(amountText)) return null;
+
+    const amount = Number(amountText);
+
+    if (!Number.isSafeInteger(amount) || amount > 1_000_000_000) {
+      return null;
+    }
+
+    const gold = Math.floor(amount / settings.gold_rate);
+    const normal = Math.floor(
+      (amount - gold * settings.gold_rate) / settings.normal_rate
+    );
+
+    return { gold, normal };
+  }
 
   async function runAction(
     donationId: string,
@@ -192,17 +298,16 @@ export default function AdminDonateDashboard({
           );
         }
 
-        if (!settings || settings.normal_rate <= 0 || settings.gold_rate <= 0) {
+        const estimate = preview(rawAmount);
+
+        if (!estimate) {
           throw new Error('Chưa có tỷ lệ Gacha hợp lệ để tính lượt.');
         }
 
-        const gold = Math.floor(receivedAmount / settings.gold_rate);
-        const remainder = receivedAmount - gold * settings.gold_rate;
-        const normal = Math.floor(remainder / settings.normal_rate);
         const confirmed = window.confirm(
           `Bắt đầu xác minh ${money(receivedAmount)}?\n` +
-          `Dự kiến: ${gold} Gold + ${normal} Normal.\n` +
-          `Lượt sẽ tự cộng khi Admin Finalize sau thời gian chờ.`
+            `Dự kiến: ${estimate.gold} Gold + ${estimate.normal} Normal.\n` +
+            `Lượt sẽ tự cộng khi Admin Finalize sau thời gian chờ.`
         );
 
         if (!confirmed) return;
@@ -212,9 +317,7 @@ export default function AdminDonateDashboard({
           received_amount: receivedAmount,
         });
 
-        setNotice(
-          'Đã bắt đầu xác minh. Có thể hủy trong thời gian chờ.'
-        );
+        setNotice('Đã bắt đầu xác minh. Có thể hủy trong thời gian chờ.');
       }
 
       if (action === 'cancel') {
@@ -259,502 +362,337 @@ export default function AdminDonateDashboard({
     }
   }
 
-  const buttonStyle: React.CSSProperties = {
-    padding: '9px 15px',
-    borderRadius: 10,
-    border: '1px solid #e8a7c9',
-    background: '#e12589',
-    color: '#fff',
-    fontWeight: 700,
-    cursor: 'pointer',
-  };
+  // Xuất file CSV (mở được bằng Excel), lọc theo Project đang chọn.
+  function exportCsv() {
+    const header = [
+      'Reference',
+      'Project',
+      'User',
+      'User ID',
+      'SĐT',
+      'Ngày khai báo',
+      'Ngày chuyển khoản',
+      'Ghi chú',
+      'Lời nhắn Kandee',
+      'Lời nhắn BST',
+      'Trường khai báo khác',
+      'Số bill',
+      'Khai báo (VND)',
+      'Thực nhận (VND)',
+      'Trạng thái',
+      'Lượt Normal',
+      'Lượt Gold',
+    ];
 
-  const secondaryButtonStyle: React.CSSProperties = {
-    ...buttonStyle,
-    background: '#fff',
-    color: '#a41464',
-  };
+    const lines = [
+      header,
+      ...rows.map(donation => [
+        reference(donation),
+        getProjectName(donation),
+        names.get(donation.user_id) ?? '',
+        donation.user_id,
+        declared(donation, 'phone') ?? '',
+        donation.created_at,
+        declared(donation, 'transfer_date') ?? '',
+        donation.note ?? '',
+        donation.kandee_message ?? '',
+        donation.bst_message ?? '',
+        Object.fromEntries(
+          Object.entries(donation.declaration_fields ?? {}).filter(
+            ([key]) => !SPECIAL_KEYS.has(key)
+          )
+        ),
+        (billsByDonation.get(donation.id) ?? []).length,
+        donation.declared_amount,
+        donation.received_amount ?? '',
+        donation.status,
+        donation.status === 'verified' ? donation.normal_tickets ?? 0 : 0,
+        donation.status === 'verified' ? donation.gold_tickets ?? 0 : 0,
+      ]),
+    ].map(line => line.map(csvCell).join(','));
 
-  const cardStyle: React.CSSProperties = {
-    border: '1px solid #f0c8df',
-    borderRadius: 14,
-    padding: 16,
-    background: '#fff',
-  };
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], {
+      type: 'text/csv;charset=utf-8',
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `BST_DoiSoat_${project === 'all' ? 'ALL' : project.slice(0, 8)}_${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const waitMinutes = settings
+    ? Math.round((settings.verify_wait_seconds / 60) * 100) / 100
+    : null;
 
   return (
-    <div style={{ display: 'grid', gap: 20, marginTop: 20 }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns:
-            'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: 12,
-        }}
-      >
-        {[
-          { label: 'Tổng Donate', value: donations.length },
-          { label: 'Pending', value: pending },
-          { label: 'Processing', value: processing },
-          { label: 'Verified', value: verified },
-        ].map((item) => (
-          <div key={item.label} style={cardStyle}>
-            <div style={{ fontSize: 13, color: '#76596b' }}>
-              {item.label}
-            </div>
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                color: '#e12589',
-              }}
-            >
-              {item.value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={cardStyle}>
-        <h3 style={{ marginTop: 0 }}>Cấu hình Gacha hiện tại</h3>
-
-        {settings ? (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns:
-                'repeat(auto-fit, minmax(160px, 1fr))',
-              gap: 12,
-            }}
-          >
-            <div>
-              <strong>Normal Ticket</strong>
-              <p>{money(settings.normal_rate)} / lượt</p>
-            </div>
-
-            <div>
-              <strong>Gold Ticket</strong>
-              <p>{money(settings.gold_rate)} / lượt</p>
-            </div>
-
-            <div>
-              <strong>Thời gian chờ Verify</strong>
-              <p>{settings.verify_wait_seconds} giây</p>
-            </div>
-          </div>
-        ) : (
-          <p>Chưa đọc được cấu hình Gacha.</p>
-        )}
-
-        <p
-          style={{
-            marginBottom: 0,
-            fontSize: 13,
-            color: '#76596b',
-          }}
-        >
-          Tỷ lệ được lưu tại thời điểm bắt đầu Verify.
-          Bảng này hiện chỉ hiển thị cấu hình, chưa cho chỉnh sửa.
-        </p>
-      </div>
-
+    <>
       {error && (
-        <div
-          role="alert"
-          style={{
-            padding: 14,
-            borderRadius: 10,
-            border: '1px solid #dc7272',
-            background: '#fff0f0',
-            color: '#a51d36',
-            overflowWrap: 'anywhere',
-          }}
-        >
+        <p role="alert" className="error">
           {error}
-        </div>
+        </p>
       )}
 
       {notice && (
-        <div
-          role="status"
-          style={{
-            padding: 14,
-            borderRadius: 10,
-            border: '1px solid #e8a7c9',
-            background: '#fff0f7',
-            color: '#9b185d',
-          }}
-        >
+        <p role="status" className="result">
           {notice}
-        </div>
+        </p>
       )}
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}
-      >
-        <h3 style={{ margin: 0 }}>Danh sách Donate</h3>
+      <p className="muted">
+        {settings
+          ? `Thời gian chờ trước khi công bố xác minh: ${waitMinutes} phút (${settings.verify_wait_seconds} giây). Tỷ lệ: ${money(settings.normal_rate)} / lượt thường, ${money(settings.gold_rate)} / lượt Gold.`
+          : 'Chưa đọc được cấu hình Gacha.'}
+      </p>
+
+      <div className="row export-toolbar">
+        <div>
+          <label htmlFor="reconcileProject">Xuất dữ liệu Project</label>
+
+          <select
+            id="reconcileProject"
+            value={project}
+            onChange={event => setProject(event.target.value)}
+          >
+            <option value="all">Tất cả Project</option>
+            {projectOptions.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button type="button" onClick={exportCsv}>
+          📥 Xuất Excel · Đối soát
+        </button>
 
         <button
           type="button"
-          style={secondaryButtonStyle}
+          className="secondary"
           onClick={() => router.refresh()}
         >
           Làm mới dữ liệu
         </button>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {(
-          [
-            ['all', 'Tất cả'],
-            ['pending', 'Pending'],
-            ['processing', 'Processing'],
-            ['verified', 'Verified'],
-            ['rejected', 'Rejected'],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setFilter(value)}
-            style={
-              filter === value
-                ? buttonStyle
-                : secondaryButtonStyle
-            }
-          >
-            {label}
-          </button>
-        ))}
+      <div className="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>REFERENCE / PROJECT / EMAIL / ID</th>
+              <th>THÔNG TIN KHAI BÁO</th>
+              <th>KHAI BÁO</th>
+              <th>Thực nhận (VND)</th>
+              <th>Trạng thái</th>
+              <th>LƯỢT</th>
+              <th>THAO TÁC</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={7}>Chưa có donate</td>
+              </tr>
+            ) : (
+              rows.map(donation => {
+                const remaining = getSecondsLeft(
+                  donation.verification_ready_at,
+                  now
+                );
+
+                const isBusy = busyId === donation.id;
+                const estimate = preview(
+                  amounts[donation.id]?.trim() ?? ''
+                );
+                const donationBills = billsByDonation.get(donation.id) ?? [];
+
+                return (
+                  <tr key={donation.id}>
+                    <td>
+                      <b>{reference(donation)}</b>
+                      <br />
+                      <small>Project: {getProjectName(donation)}</small>
+                      <br />
+                      {names.get(donation.user_id) ?? '—'}
+                      <br />
+                      <small>SĐT: {text(declared(donation, 'phone'))}</small>
+                    </td>
+
+                    <td>
+                      <div className="reconcile-details">
+                        <div>
+                          <b>NGÀY KHAI BÁO:</b> {dateTime(donation.created_at)}
+                        </div>
+                        <div>
+                          <b>NGÀY CHUYỂN:</b>{' '}
+                          {text(declared(donation, 'transfer_date'))}
+                        </div>
+                        <div>
+                          <b>GHI CHÚ:</b> {text(donation.note)}
+                        </div>
+                        <div>
+                          <b>LỜI NHẮN KANDEE:</b>{' '}
+                          {text(donation.kandee_message)}
+                        </div>
+                        <div>
+                          <b>LỜI NHẮN BST:</b> {text(donation.bst_message)}
+                        </div>
+                        <div>
+                          <b>BILL:</b>{' '}
+                          {donationBills.length === 0
+                            ? 'CHƯA CÓ'
+                            : donationBills.map((bill, index) =>
+                                bill.url ? (
+                                  <a
+                                    key={`${bill.name}-${index}`}
+                                    href={bill.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'inline-block',
+                                      margin: '3px 8px 3px 0',
+                                    }}
+                                  >
+                                    XEM BILL {index + 1} ↗
+                                  </a>
+                                ) : (
+                                  <span
+                                    key={`${bill.name}-${index}`}
+                                    className="muted"
+                                    style={{ marginRight: 8 }}
+                                  >
+                                    BILL {index + 1} (lỗi liên kết)
+                                  </span>
+                                )
+                              )}
+                        </div>
+                        {Object.entries(donation.declaration_fields ?? {})
+                          .filter(([key]) => !SPECIAL_KEYS.has(key))
+                          .map(([key, value]) => (
+                            <div key={key}>
+                              <b>{(labels[key] ?? key).toUpperCase()}:</b>{' '}
+                              {text(value)}
+                            </div>
+                          ))}
+                      </div>
+                    </td>
+
+                    <td>{money(donation.declared_amount)}</td>
+
+                    <td>
+                      {donation.status === 'pending' ? (
+                        <>
+                          <input
+                            style={{ minWidth: 145 }}
+                            type="number"
+                            min="0"
+                            max="1000000000"
+                            step="1"
+                            value={amounts[donation.id] ?? ''}
+                            placeholder="Nhập thực nhận"
+                            disabled={Boolean(busyId)}
+                            onChange={event =>
+                              setAmounts(previous => ({
+                                ...previous,
+                                [donation.id]: event.target.value,
+                              }))
+                            }
+                          />
+
+                          {estimate && (
+                            <small className="muted">
+                              Dự kiến: {estimate.gold} Gold + {estimate.normal}{' '}
+                              Thường
+                            </small>
+                          )}
+                        </>
+                      ) : (
+                        money(donation.received_amount)
+                      )}
+                    </td>
+
+                    <td>
+                      {statusLabel[donation.status] ?? donation.status}
+
+                      {donation.status === 'processing' && (
+                        <>
+                          <br />
+                          <small>
+                            {remaining > 0
+                              ? `Còn ${formatCountdown(remaining)}`
+                              : 'Đã hết thời gian chờ'}
+                          </small>
+                        </>
+                      )}
+                    </td>
+
+                    <td>
+                      {donation.status === 'verified'
+                        ? `${donation.gold_tickets ?? 0} Gold · ${donation.normal_tickets ?? 0} Thường`
+                        : 0}
+                    </td>
+
+                    <td>
+                      {donation.status === 'pending' && (
+                        <button
+                          type="button"
+                          disabled={Boolean(busyId)}
+                          onClick={() => runAction(donation.id, 'verify')}
+                        >
+                          {isBusy ? 'Đang xử lý...' : 'Verify'}
+                        </button>
+                      )}
+
+                      {donation.status === 'processing' &&
+                        (remaining > 0 ? (
+                          <button
+                            type="button"
+                            className="secondary"
+                            disabled={Boolean(busyId)}
+                            onClick={() => runAction(donation.id, 'cancel')}
+                          >
+                            {isBusy ? 'Đang xử lý...' : 'Hủy'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={Boolean(busyId)}
+                            onClick={() =>
+                              runAction(donation.id, 'finalize')
+                            }
+                          >
+                            {isBusy ? 'Đang xử lý...' : 'Finalize'}
+                          </button>
+                        ))}
+
+                      {donation.status === 'verified' && (
+                        <span className="ok">✓ Đã xác minh</span>
+                      )}
+
+                      {donation.status === 'rejected' && (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {filtered.length === 0 ? (
-        <div style={cardStyle}>
-          <p style={{ margin: 0, color: '#76596b' }}>
-            Chưa có Donate nào trong danh sách này.
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: 14 }}>
-          {filtered.map((donation) => {
-            const remaining = getSecondsLeft(
-              donation.verification_ready_at,
-              now
-            );
-
-            const isBusy = busyId === donation.id;
-            const enteredAmount = amounts[donation.id]?.trim() ?? '';
-            const validPreview = /^\d+$/.test(enteredAmount) &&
-              Number.isSafeInteger(Number(enteredAmount)) &&
-              Number(enteredAmount) <= 1_000_000_000 &&
-              Boolean(settings && settings.normal_rate > 0 && settings.gold_rate > 0);
-            const previewGold = validPreview && settings
-              ? Math.floor(Number(enteredAmount) / settings.gold_rate) : 0;
-            const previewRemainder = validPreview && settings
-              ? Number(enteredAmount) - previewGold * settings.gold_rate : 0;
-            const previewNormal = validPreview && settings
-              ? Math.floor(previewRemainder / settings.normal_rate) : 0;
-
-            return (
-              <article key={donation.id} style={cardStyle}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 12,
-                    marginBottom: 12,
-                  }}
-                >
-                  <div>
-                    <strong
-                      style={{
-                        color: '#b31a70',
-                        fontSize: 17,
-                      }}
-                    >
-                      {getProjectName(donation)}
-                    </strong>
-
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: '#76596b',
-                        marginTop: 4,
-                      }}
-                    >
-                      {dateTime(donation.created_at)}
-                    </div>
-                  </div>
-
-                  <strong
-                    style={{
-                      color:
-                        donation.status === 'verified'
-                          ? '#16844b'
-                          : donation.status === 'processing'
-                            ? '#b46a00'
-                            : '#a41464',
-                    }}
-                  >
-                    {donation.status.toUpperCase()}
-                  </strong>
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns:
-                      'repeat(auto-fit, minmax(180px, 1fr))',
-                    gap: 10,
-                    fontSize: 14,
-                  }}
-                >
-                  <div>
-                    <span style={{ color: '#76596b' }}>
-                      Số tiền khai báo
-                    </span>
-                    <div>
-                      <strong>
-                        {money(donation.declared_amount)}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span style={{ color: '#76596b' }}>
-                      Số tiền thực nhận
-                    </span>
-                    <div>
-                      <strong>
-                        {donation.received_amount === null
-                          ? 'Chưa xác nhận'
-                          : money(donation.received_amount)}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span style={{ color: '#76596b' }}>
-                      Lượt đã phân bổ
-                    </span>
-                    <div>
-                      Normal: {donation.normal_tickets ?? 0}
-                      {' · '}
-                      Gold: {donation.gold_tickets ?? 0}
-                    </div>
-                  </div>
-                </div>
-
-                {donation.status === 'pending' && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 10,
-                      alignItems: 'end',
-                      marginTop: 16,
-                    }}
-                  >
-                    <label
-                      style={{
-                        display: 'grid',
-                        gap: 6,
-                        flex: '1 1 220px',
-                      }}
-                    >
-                      <span style={{ fontSize: 13 }}>
-                        Số tiền thực nhận (VND)
-                      </span>
-
-                      <input
-                        type="number"
-                        min="0"
-                        max="1000000000"
-                        step="1"
-                        value={amounts[donation.id] ?? ''}
-                        onChange={(event) =>
-                          setAmounts((previous) => ({
-                            ...previous,
-                            [donation.id]: event.target.value,
-                          }))
-                        }
-                        placeholder="Nhập số tiền thực nhận"
-                        disabled={Boolean(busyId)}
-                        style={{
-                          padding: 10,
-                          borderRadius: 10,
-                          border: '1px solid #e8a7c9',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      style={buttonStyle}
-                      disabled={Boolean(busyId)}
-                      onClick={() =>
-                        runAction(donation.id, 'verify')
-                      }
-                    >
-                      {isBusy
-                        ? 'Đang xử lý...'
-                        : 'Bắt đầu Verify'}
-                    </button>
-                  </div>
-                )}
-
-                {donation.status === 'pending' && validPreview && (
-                  <p style={{ marginTop: 8, color: '#a41464', fontWeight: 700 }}>
-                    Dự kiến tự cấp khi Finalize: {previewGold} Gold + {previewNormal} Normal
-                    {' · '}Dư {money(previewRemainder - previewNormal * (settings?.normal_rate ?? 0))}
-                  </p>
-                )}
-
-                {donation.status === 'processing' && (
-                  <div
-                    style={{
-                      marginTop: 16,
-                      padding: 14,
-                      borderRadius: 12,
-                      background: '#fff0f7',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        color: '#a41464',
-                      }}
-                    >
-                      {remaining > 0
-                        ? `Đang chờ: ${formatCountdown(remaining)}`
-                        : 'Đã hết thời gian chờ'}
-                    </div>
-
-                    <p
-                      style={{
-                        margin: '8px 0',
-                        fontSize: 13,
-                      }}
-                    >
-                      Thời điểm sẵn sàng:{' '}
-                      {dateTime(
-                        donation.verification_ready_at
-                      )}
-                    </p>
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 8,
-                        marginTop: 12,
-                      }}
-                    >
-                      {remaining > 0 ? (
-                        <button
-                          type="button"
-                          style={secondaryButtonStyle}
-                          disabled={Boolean(busyId)}
-                          onClick={() =>
-                            runAction(donation.id, 'cancel')
-                          }
-                        >
-                          {isBusy
-                            ? 'Đang xử lý...'
-                            : 'Cancel Verify'}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          style={buttonStyle}
-                          disabled={Boolean(busyId)}
-                          onClick={() =>
-                            runAction(donation.id, 'finalize')
-                          }
-                        >
-                          {isBusy
-                            ? 'Đang xử lý...'
-                            : 'Finalize — Verified'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {donation.status === 'verified' && (
-                  <div
-                    style={{
-                      marginTop: 14,
-                      padding: 12,
-                      borderRadius: 10,
-                      background: '#f2fff7',
-                      color: '#17663d',
-                      fontSize: 13,
-                    }}
-                  >
-                    <strong>Đã xác minh</strong>
-                    {' · '}
-                    {dateTime(donation.verified_at)}
-
-                    <div style={{ marginTop: 6 }}>
-                      {donation.allocation_completed_at
-                        ? `Đã phân bổ: ${
-                            donation.allocation_choice ?? '—'
-                          }`
-                        : 'Chưa có phân bổ lượt (giao dịch cũ cần đối soát)'}
-                    </div>
-                  </div>
-                )}
-
-                <details style={{ marginTop: 14 }}>
-                  <summary
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      color: '#76596b',
-                    }}
-                  >
-                    Thông tin kỹ thuật
-                  </summary>
-
-                  <div
-                    style={{
-                      fontSize: 12,
-                      marginTop: 8,
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    <div>Donation ID: {donation.id}</div>
-                    <div>User ID: {donation.user_id}</div>
-                    <div>Project ID: {donation.project_id}</div>
-                  </div>
-                </details>
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      <p
-        style={{
-          fontSize: 12,
-          color: '#76596b',
-          marginBottom: 0,
-        }}
-      >
-        Hiển thị tối đa 100 Donate mới nhất. Việc xác minh
-        và tự động phân bổ lượt được xử lý tại Supabase; giao diện
-        không trực tiếp cộng lượt vào ví.
+      <p className="muted">
+        Hiển thị tối đa 100 Donate mới nhất. Link xem bill chỉ có hiệu lực 1
+        giờ, bấm &quot;Làm mới dữ liệu&quot; để tạo link mới. Xác minh và phân bổ
+        lượt được xử lý tại Supabase, giao diện không trực tiếp cộng lượt vào
+        ví.
       </p>
-    </div>
+    </>
   );
 }

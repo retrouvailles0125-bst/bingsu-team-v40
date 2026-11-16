@@ -1,6 +1,7 @@
-
+import Link from 'next/link';
 import { supabaseServer } from '@/lib/supabase';
 import { requireAdminAccess } from '@/lib/admin-security';
+
 import AdminDonateDashboard from './AdminDonateDashboard';
 import AdminOtpForm from './AdminOtpForm';
 import AdminProjects from './AdminProjects';
@@ -8,12 +9,123 @@ import AdminGachaSettings from './AdminGachaSettings';
 import AdminDataOverview from './AdminDataOverview';
 import AdminTicketGrants from './AdminTicketGrants';
 import AdminBankSettings from './AdminBankSettings';
+import AdminDonateFields from './AdminDonateFields';
+import AdminKandeeMessages from './AdminKandeeMessages';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminPage({searchParams}:{searchParams:Promise<{section?:string}>}) {
-  const {section:requestedSection}=await searchParams;
-  const section=requestedSection || 'accounts-overview';
+type PageProps = {
+  searchParams: Promise<{ section?: string }>;
+};
+
+type Tab = {
+  id: string;
+  label: string;
+};
+
+type Group = {
+  title: string;
+  tabs: Tab[];
+};
+
+// Thứ tự nhóm và tên tab lấy theo Admin HTML V40 gốc.
+const groups: Group[] = [
+  {
+    title: 'HỆ THỐNG',
+    tabs: [
+      { id: 'accounts-overview', label: 'QUẢN LÝ TÀI KHOẢN USER' },
+    ],
+  },
+  {
+    title: 'DONATE & PROJECT',
+    tabs: [
+      { id: 'donate-fields', label: 'KHAI BÁO DONATE' },
+      { id: 'love-overview', label: 'LỜI NHẮN CỦA KANDEE' },
+      { id: 'donate-management', label: 'ĐỐI SOÁT DONATE' },
+      {
+        id: 'bank-settings',
+        label: 'CẤU HÌNH QR NGÂN HÀNG NHẬN DONATE',
+      },
+      { id: 'project-management', label: 'QUẢN LÝ PROJECT DONATE' },
+    ],
+  },
+  {
+    title: 'VÒNG XOAY & QUÀ',
+    tabs: [
+      { id: 'gacha-settings', label: 'CÀI ĐẶT VÒNG XOAY' },
+      {
+        id: 'grant-tickets',
+        label: 'THEO DÕI & TẶNG LƯỢT QUAY USER',
+      },
+      {
+        id: 'gift-types-overview',
+        label: 'XÁC SUẤT TRÚNG QUÀ THEO ĐỘ HIẾM',
+      },
+      {
+        id: 'gift-items-overview',
+        label: 'QUẢN LÝ DANH SÁCH QUÀ TẶNG',
+      },
+      {
+        id: 'spins-overview',
+        label: 'KẾT QUẢ QUAY GỬI VỀ ADMIN',
+      },
+    ],
+  },
+  {
+    title: 'TRADE & INVENTORY',
+    tabs: [
+      { id: 'trade-overview', label: 'THEO DÕI TRADE GIFT' },
+      { id: 'gift-transfers', label: 'THEO DÕI TẶNG GIFT' },
+      {
+        id: 'inventory-overview',
+        label: 'INVENTORY CUỐI CÙNG THEO USER',
+      },
+    ],
+  },
+  {
+    title: 'CỘNG ĐỒNG',
+    tabs: [
+      {
+        id: 'community-overview',
+        label: 'QUẢN LÝ CỘNG ĐỒNG KANDEE',
+      },
+    ],
+  },
+];
+
+// 'love-overview' đã tách ra component riêng AdminKandeeMessages.
+const supportedDataSections = [
+  'accounts-overview',
+  'gift-types-overview',
+  'gift-items-overview',
+  'spins-overview',
+  'trade-overview',
+  'community-overview',
+];
+
+export default async function AdminPage({
+  searchParams,
+}: PageProps) {
+  const { section: requestedSection } = await searchParams;
+
+  const allTabs: Tab[] = groups.flatMap(
+    (group) => group.tabs
+  );
+
+  const section =
+    requestedSection &&
+    allTabs.some((tab) => tab.id === requestedSection)
+      ? requestedSection
+      : 'accounts-overview';
+
+  const currentGroup = groups.find((group) =>
+    group.tabs.some((tab) => tab.id === section)
+  );
+
+  const currentTab = allTabs.find(
+    (tab) => tab.id === section
+  );
+
   const db = await supabaseServer();
 
   const {
@@ -64,88 +176,258 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
     );
   }
 
-  const dataSections=['accounts-overview','tickets-overview','spins-overview','gift-types-overview','gift-items-overview','trade-overview','offers-overview','community-overview','replies-overview','love-overview'];
-  const isDataSection=dataSections.includes(section);
-  const [donationsResult, settingsResult, projectsResult] = await Promise.all([
-    db.from('donations').select('id,user_id,project_id,declared_amount,received_amount,status,created_at,verified_at,verification_ready_at,normal_tickets,gold_tickets,allocation_choice,allocation_completed_at,projects(name)').order('created_at',{ascending:false}).limit(100),
-    db.from('gacha_exchange_settings').select('normal_rate,gold_rate,verify_wait_seconds').eq('id',true).single(),
-    db.from('projects').select('id,name,description,is_open').order('created_at',{ascending:false}),
+  const needsUsers = ['love-overview', 'donate-management'].includes(
+    section
+  );
+
+  const [
+    donationsResult,
+    settingsResult,
+    projectsResult,
+    grantProfiles,
+    grantHistory,
+    bankResult,
+    messageResult,
+    messageProjects,
+    userNames,
+  ] = await Promise.all([
+    // Đối soát: lấy toàn bộ cột để hiển thị đủ thông tin khai báo.
+    section === 'donate-management'
+      ? db
+          .from('donations')
+          .select('*,projects(name)')
+          .order('created_at', { ascending: false })
+          .limit(100)
+      : null,
+
+    ['donate-management', 'gacha-settings'].includes(section)
+      ? db
+          .from('gacha_exchange_settings')
+          .select(
+            'normal_rate,gold_rate,verify_wait_seconds'
+          )
+          .eq('id', true)
+          .single()
+      : null,
+
+    section === 'project-management'
+      ? db
+          .from('projects')
+          .select('id,name,description,is_open')
+          .order('created_at', { ascending: false })
+      : null,
+
+    section === 'grant-tickets'
+      ? db
+          .from('profiles')
+          .select('id,username,blocked,role')
+          .order('created_at', { ascending: false })
+          .limit(500)
+      : null,
+
+    section === 'grant-tickets'
+      ? db
+          .from('admin_ticket_grants')
+          .select(
+            'id,recipient_id,actor_id,normal_count,gold_count,reason,created_at'
+          )
+          .order('created_at', { ascending: false })
+          .limit(100)
+      : null,
+
+    section === 'bank-settings'
+      ? db
+          .from('bst_donation_bank_settings')
+          .select(
+            'bank_name,account_name,account_number,qr_image_url,instructions'
+          )
+          .eq('id', true)
+          .maybeSingle()
+      : null,
+
+    // Lời nhắn của Kandee: lấy từ khai báo donate.
+    section === 'love-overview'
+      ? db
+          .from('donations')
+          .select(
+            'id,user_id,project_id,declared_amount,received_amount,status,created_at,kandee_message,bst_message,projects(name)'
+          )
+          .order('created_at', { ascending: false })
+          .limit(500)
+      : null,
+
+    section === 'love-overview'
+      ? db
+          .from('projects')
+          .select('id,name')
+          .order('created_at', { ascending: false })
+      : null,
+
+    needsUsers
+      ? db.from('profiles').select('id,username').limit(1000)
+      : null,
   ]);
-  const [grantProfiles,grantHistory,bankResult] = await Promise.all([
-    db.from('profiles').select('id,username,blocked,role').order('created_at',{ascending:false}).limit(500),
-    db.from('admin_ticket_grants').select('id,recipient_id,actor_id,normal_count,gold_count,reason,created_at').order('created_at',{ascending:false}).limit(100),
-    db.from('bst_donation_bank_settings').select('bank_name,account_name,account_number,qr_image_url,instructions').eq('id',true).maybeSingle(),
-  ]);
+
+  const unavailableSections = [
+    'gift-transfers',
+    'inventory-overview',
+  ];
 
   return (
     <main className="page">
-      <section className="panel">
-        <h1 style={{ color: '#e12589' }}>
-          BINGSU TEAM — ADMIN V40
-        </h1>
-        <p className="muted">
-          Trung tâm quản trị BINGSU TEAM. Chọn một mục để mở nội dung quản lý tương ứng.
-        </p>
+      {/* Thanh công cụ HTML V40 */}
+      <div className="bst-admin-toolbar" />
 
-        <nav className="bst-v40-admin-menu" aria-label="Danh mục quản trị V40">
-          <section><h2>✦ HỆ THỐNG</h2><a className="bst-v40-admin-primary" href="/admin?section=accounts-overview">QUẢN LÝ TÀI KHOẢN USER</a></section>
-          <section><h2>DONATE &amp; PROJECT</h2><div className="bst-v40-admin-menu-grid">
-            <a href="/admin?section=donate-management">KHAI BÁO DONATE / ĐỐI SOÁT DONATE</a>
-            <a href="/admin?section=love-overview">LỜI NHẮN CỦA KANDEE</a>
-            <a href="/admin?section=bank-settings">CẤU HÌNH QR NGÂN HÀNG NHẬN DONATE</a>
-            <a href="/admin?section=project-management">QUẢN LÝ PROJECT DONATE</a>
-          </div></section>
-          <section><h2>VÒNG XOAY &amp; QUÀ</h2><div className="bst-v40-admin-menu-grid">
-            <a href="/admin?section=gacha-settings">CÀI ĐẶT GACHA</a>
-            <a href="/admin?section=grant-tickets">THEO DÕI &amp; TẶNG LƯỢT QUAY USER</a>
-            <a href="/admin?section=gift-types-overview">XÁC SUẤT TRÚNG QUÀ THEO ĐỘ HIẾM</a>
-            <a href="/admin?section=gift-items-overview">QUẢN LÝ DANH SÁCH QUÀ TẶNG</a>
-            <a href="/admin?section=spins-overview">KẾT QUẢ QUAY GỬI VỀ ADMIN</a>
-          </div></section>
-          <section><h2>TRADE &amp; INVENTORY</h2><div className="bst-v40-admin-menu-grid">
-            <a href="/admin?section=trade-overview">THEO DÕI TRADE GIFT</a>
-            <a href="/admin?section=gift-items-overview">THEO DÕI TẶNG GIFT / INVENTORY CUỐI CÙNG THEO USER</a>
-          </div></section>
-          <section><h2>CỘNG ĐỒNG</h2><div className="bst-v40-admin-menu-grid">
-            <a href="/admin?section=community-overview">QUẢN LÝ CỘNG ĐỒNG KANDEE</a>
-            <a href="/admin?section=admin-reports">BÁO CÁO &amp; XUẤT DỮ LIỆU</a>
-          </div></section>
-        </nav>
-      </section>
-
-{section==='bank-settings' && <AdminBankSettings initial={bankResult.data ?? null} />}
-      {section==='admin-reports' && <section className="panel" id="admin-reports" style={{scrollMarginTop:24}}>
-        <h2>BÁO CÁO — XUẤT DỮ LIỆU</h2>
-        <p className="muted">Tải CSV mở bằng Excel; tối đa 5.000 bản ghi gần nhất mỗi loại, yêu cầu Admin OTP.</p>
-        <div style={{display:'flex',flexWrap:'wrap',gap:12}}>
-          {(['donations','spins','gifts','transfers','trade','trade_offers','gift_movements','ticket_grants'] as const).map(kind=><a key={kind} href={'/api/admin/reports?report='+kind} download style={{padding:12,border:'1px solid #e12589',borderRadius:10}}>Xuất {kind.toUpperCase()}</a>)}
-        </div>
-      </section>}
-      {section==='gacha-settings' && <AdminGachaSettings settings={settingsResult.data ?? null} />}
-      {section==='project-management' && <AdminProjects projects={projectsResult.data ?? []} />}
-      {section==='grant-tickets' && <AdminTicketGrants profiles={grantProfiles.data ?? []} history={grantHistory.data ?? []} historyError={grantHistory.error?.message} />}
-      {isDataSection && <AdminDataOverview section={section} />}
-
-      {section==='donate-management' && <section
-        className="panel"
-        id="donate-management"
-        style={{ scrollMarginTop: 24 }}
+      {/* Thanh tab ngang HTML V40 */}
+      <nav
+        className="subtabs admin-tabs"
+        aria-label="BINGSU TEAM Admin"
       >
-        <h2>BINGSU TEAM — DONATE MANAGEMENT</h2>
-        <p className="muted">
-          Quản lý xác minh Donate và phân bổ lượt Gacha V40.4.
-        </p>
+        {groups.map((group) => (
+          <div
+            key={group.title}
+            style={{ display: 'contents' }}
+          >
+            <span
+              className={
+                'admin-group-label' +
+                (currentGroup?.title === group.title
+                  ? ' group-current'
+                  : '')
+              }
+            >
+              {group.title}
+            </span>
 
-        <AdminDonateDashboard
-          donations={donationsResult.data ?? []}
-          settings={settingsResult.data ?? null}
-          initialError={
-            donationsResult.error?.message ??
-            settingsResult.error?.message ??
-            null
-          }
-        />
-      </section>}
+            {group.tabs.map((tab) => (
+              <Link
+                key={tab.id}
+                href={`/admin?section=${tab.id}`}
+                className={
+                  section === tab.id ? 'selected' : ''
+                }
+                aria-current={
+                  section === tab.id ? 'page' : undefined
+                }
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  textDecoration: 'none',
+                }}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      {/* Thanh vị trí HTML V40 */}
+      <div className="bst-admin-location">
+        <span className="bst-location-label">
+          BẠN ĐANG Ở
+        </span>
+
+        <span>
+          {currentGroup?.title ?? 'HỆ THỐNG'}
+        </span>
+
+        <span className="bst-location-chevron">
+          ›
+        </span>
+
+        <strong>
+          {currentTab?.label ?? 'QUẢN LÝ TÀI KHOẢN USER'}
+        </strong>
+      </div>
+
+      {supportedDataSections.includes(section) && (
+        <section className="panel">
+          <h2>{currentTab?.label}</h2>
+          <AdminDataOverview section={section} />
+        </section>
+      )}
+
+      {section === 'donate-fields' && (
+        <AdminDonateFields />
+      )}
+
+      {section === 'love-overview' && (
+        <section className="panel">
+          <h2>LỜI NHẮN CỦA KANDEE</h2>
+          <AdminKandeeMessages
+            rows={messageResult?.data ?? []}
+            projects={messageProjects?.data ?? []}
+            users={userNames?.data ?? []}
+            error={messageResult?.error?.message ?? null}
+          />
+        </section>
+      )}
+
+      {section === 'gacha-settings' && (
+        <section className="panel">
+          <h2>CÀI ĐẶT VÒNG XOAY</h2>
+          <AdminGachaSettings
+            settings={settingsResult?.data ?? null}
+          />
+        </section>
+      )}
+
+      {section === 'donate-management' && (
+        <section className="panel">
+          <h2>Đối soát Donate</h2>
+          <AdminDonateDashboard
+            donations={donationsResult?.data ?? []}
+            settings={settingsResult?.data ?? null}
+            users={userNames?.data ?? []}
+            initialError={
+              donationsResult?.error?.message ??
+              settingsResult?.error?.message ??
+              null
+            }
+          />
+        </section>
+      )}
+
+      {section === 'grant-tickets' && (
+        <section className="panel">
+          <h2>THEO DÕI & TẶNG LƯỢT QUAY USER</h2>
+          <AdminTicketGrants
+            profiles={grantProfiles?.data ?? []}
+            history={grantHistory?.data ?? []}
+            historyError={grantHistory?.error?.message}
+          />
+        </section>
+      )}
+
+      {section === 'bank-settings' && (
+        <section className="panel">
+          <h2>CẤU HÌNH QR NGÂN HÀNG NHẬN DONATE</h2>
+          <AdminBankSettings
+            initial={bankResult?.data ?? null}
+          />
+        </section>
+      )}
+
+      {section === 'project-management' && (
+        <section className="panel">
+          <h2>Quản lý Project Donate</h2>
+          <AdminProjects
+            projects={projectsResult?.data ?? []}
+          />
+        </section>
+      )}
+
+      {unavailableSections.includes(section) && (
+        <section className="panel">
+          <h2>{currentTab?.label}</h2>
+          <p className="muted">
+            Phần này có trong HTML V40 gốc nhưng chưa
+            có component kết nối backend tương ứng.
+            Chưa thực hiện thao tác quản trị tại đây.
+          </p>
+        </section>
+      )}
     </main>
   );
 }

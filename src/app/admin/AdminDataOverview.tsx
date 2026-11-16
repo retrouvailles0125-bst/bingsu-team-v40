@@ -1,6 +1,7 @@
 import { supabaseServer } from '@/lib/supabase';
 import AdminManageActions from './AdminManageActions';
 import AdminGiftCreate from './AdminGiftCreate';
+import AdminAccountsTable from './AdminAccountsTable';
 
 type Row = Record<string, unknown>;
 function GridSection({ id, title, rows, error, fields, kind }: {
@@ -25,7 +26,7 @@ function GridSection({ id, title, rows, error, fields, kind }: {
 export default async function AdminDataOverview({section}:{section:string}) {
   const db = await supabaseServer();
   const [profiles, balances, spins, gifts, types, listings, offers, posts, replies, letters] = await Promise.all([
-    db.from('profiles').select('id,username,role,blocked,created_at').limit(100),
+    db.from('profiles').select('id,username,role,blocked,block_message,created_at').limit(100),
     db.from('spin_balances').select('user_id,normal_available,gold_available').limit(100),
     db.from('spin_events').select('id,user_id,kind,gift_item_id,created_at').order('created_at', { ascending: false }).limit(100),
     db.from('gift_items').select('id,gift_type_id,owner_id,code,source,created_at').order('created_at', { ascending: false }).limit(100),
@@ -37,7 +38,11 @@ export default async function AdminDataOverview({section}:{section:string}) {
     db.from('love_messages').select('id,author_id,body,hidden,is_private,created_at').order('created_at', { ascending: false }).limit(100),
   ]);
   return <>
-    {section==='accounts-overview' && <GridSection id="accounts-overview" kind="profiles" title="QUẢN LÝ TÀI KHOẢN — DANH SÁCH" rows={profiles.data ?? []} error={profiles.error?.message} fields={['id','username','role','blocked','created_at']} />}
+    {section==='accounts-overview' && (
+      profiles.error
+        ? <p role="alert">Không thể tải Supabase: {profiles.error.message}</p>
+        : <AdminAccountsTable accounts={profiles.data ?? []} />
+    )}
     {section==='tickets-overview' && <GridSection id="tickets-overview" title="SỐ DƯ LƯỢT GACHA" rows={balances.data ?? []} error={balances.error?.message} fields={['user_id','normal_available','gold_available']} />}
     {section==='spins-overview' && <GridSection id="spins-overview" title="KẾT QUẢ QUAY" rows={spins.data ?? []} error={spins.error?.message} fields={['id','user_id','kind','gift_item_id','created_at']} />}
     {section==='gift-types-overview' && <AdminGiftCreate />}
