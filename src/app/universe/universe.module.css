@@ -1,33 +1,291 @@
-/* BST Universe: use the supplied map as the only final visual asset. */
-.root{min-height:100vh;width:100%;background:#e91a86;padding:0;overflow:hidden}
-.viewport{width:100%;display:flex;justify-content:center;overflow:visible}
-.map{position:relative;width:100vw;max-width:none;flex:none;aspect-ratio:832/1797;isolation:isolate;overflow:visible}
-.background{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:1;display:block}
-.fallbackMap{position:absolute;inset:0;background:#e91a86;overflow:hidden;z-index:0}
-.fallbackLogo{position:absolute;top:6%;left:0;right:0;text-align:center;font:normal clamp(28px,6vw,65px)/.85 Georgia,serif;letter-spacing:-2px;color:white}
-.fallbackLogo small{display:block;font:700 clamp(9px,1.6vw,13px)/1.4 Arial,sans-serif;letter-spacing:1px;margin-top:12px}
-.roadOne,.roadTwo,.roadThree{position:absolute;height:2%;width:130%;background:#ff79b7;border-radius:99px;opacity:.65;left:-10%;top:42%;transform:rotate(12deg)}
-.roadTwo{top:61%;transform:rotate(-15deg)}
-.roadThree{top:78%;transform:rotate(20deg)}
-.house{position:absolute;z-index:2;display:block;border:0;background:transparent;padding:0;cursor:pointer;transform:translate(-50%,-50%);transition:transform .18s ease,filter .18s ease;filter:none;outline-offset:4px}
-.house img{width:100%;height:auto;display:block;pointer-events:none;user-select:none}
-.house:hover,.house:focus-visible{transform:translate(-50%,-50%) scale(1.03);filter:brightness(1.09) drop-shadow(0 3px 5px #65002d35)}
-.house:active,.selected{transform:translate(-50%,-50%) scale(1.01)}
-.treasury{left:71%;top:32%;width:46%}
-.guild{left:29%;top:47%;width:44%}
-.residence{left:76%;top:60%;width:32%}
-.teahouse{left:24%;top:68%;width:38%}
-.embassy{left:65%;top:86%;width:40%}
-.fallbackHouse{display:flex;align-items:center;justify-content:center;flex-direction:column;width:100%;aspect-ratio:1.35;background:#fff8ec;border:2px solid #8e1431;border-radius:12px;color:#8e1431;box-shadow:0 3px 0 #740b2a33}
-.fallbackHouse>span{font-size:clamp(18px,4vw,36px);line-height:1.1}
-.fallbackHouse strong{font:700 clamp(10px,2vw,17px)/1.2 Arial,sans-serif;padding:4px 6px;text-align:center}
-.tooltip{display:none}
-.accessibleNav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:1100px;margin:12px auto 0}
-.accessibleNav a{font:600 12px/1.4 Arial,sans-serif;text-decoration:none;color:#a20c5e;background:#fff6fa;border:1px solid #e6a2c4;border-radius:24px;padding:8px 12px}
-.leaving{opacity:.85;transition:opacity .2s ease}
-@media(max-width:520px){.root{padding:0}.accessibleNav{padding:0 12px}.fallbackHouse{border-width:1px}.fallbackHouse>span{font-size:20px}.fallbackHouse strong{font-size:10px}}
-@media(prefers-reduced-motion:reduce){.house,.leaving{transition:none}}
 
-/* Only this landing route hides the global header; destination routes retain it. */
-:global(body:has(#bst-universe)) :global(.site-header){display:none!important}
-:global(body:has(#bst-universe)){margin:0!important;background:#e91a86!important}
+/* BST UNIVERSE — Responsive map */
+
+.root {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+  background: linear-gradient(
+    135deg,
+    #fff1f8 0%,
+    #f9e6f4 50%,
+    #fff1f8 100%
+  );
+}
+
+.viewport {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Preserve the original vertical artwork ratio */
+.map {
+  position: relative;
+  flex: none;
+  width: min(100vw, calc(100dvh * 832 / 1797));
+  max-width: 100%;
+  aspect-ratio: 832 / 1797;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Background artwork */
+.background {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Fallback while artwork loads */
+.fallbackMap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #e91a86;
+}
+
+.fallbackLogo {
+  position: absolute;
+  top: 6%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: normal clamp(28px, 6vw, 65px)/.85 Georgia, serif;
+  letter-spacing: -2px;
+  color: white;
+}
+
+.fallbackLogo small {
+  display: block;
+  margin-top: 12px;
+  font: 700 clamp(9px, 1.6vw, 13px)/1.4 Arial, sans-serif;
+  letter-spacing: 1px;
+}
+
+.roadOne,
+.roadTwo,
+.roadThree {
+  position: absolute;
+  left: -10%;
+  width: 130%;
+  height: 2%;
+  top: 42%;
+  background: #ff79b7;
+  border-radius: 99px;
+  opacity: .65;
+  transform: rotate(12deg);
+}
+
+.roadTwo {
+  top: 61%;
+  transform: rotate(-15deg);
+}
+
+.roadThree {
+  top: 78%;
+  transform: rotate(20deg);
+}
+
+/* Interactive houses */
+.house {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+
+  /* Position independently of hover transforms */
+  translate: -50% -50%;
+  transform: none;
+
+  transition: filter .25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.house img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  transition:
+    transform .25s ease,
+    filter .25s ease;
+}
+
+/* Soft Glow + Floating */
+@media (hover: hover) and (pointer: fine) {
+  .house:hover {
+    z-index: 5;
+  }
+
+  .house:hover img {
+    transform: translateY(-3px);
+    filter:
+      brightness(1.08)
+      drop-shadow(0 5px 9px rgba(108, 0, 53, .22));
+  }
+}
+
+.house:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+  border-radius: 8px;
+  z-index: 5;
+}
+
+.house:active img,
+.selected img {
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+}
+
+.house:disabled {
+  cursor: default;
+}
+
+/* House positions — mobile artwork coordinates */
+.treasury {
+  left: 70%;
+  top: 32%;
+  width: 38%;
+}
+
+.guild {
+  left: 29%;
+  top: 47%;
+  width: 44%;
+}
+
+.residence {
+  left: 76%;
+  top: 60%;
+  width: 32%;
+}
+
+.teahouse {
+  left: 24%;
+  top: 68%;
+  width: 38%;
+}
+
+.embassy {
+  left: 65%;
+  top: 86%;
+  width: 40%;
+}
+
+/* Fallback house design */
+.fallbackHouse {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1.35;
+  background: #fff8ec;
+  border: 2px solid #8e1431;
+  border-radius: 12px;
+  color: #8e1431;
+  box-shadow: 0 3px 0 #740b2a33;
+}
+
+.fallbackHouse > span {
+  font-size: clamp(18px, 4vw, 36px);
+  line-height: 1.1;
+}
+
+.fallbackHouse strong {
+  padding: 4px 6px;
+  font: 700 clamp(10px, 2vw, 17px)/1.2 Arial, sans-serif;
+  text-align: center;
+}
+
+/* Hide old tooltip */
+.tooltip {
+  display: none;
+}
+
+.accessibleNav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 1100px;
+  margin: 12px auto 0;
+}
+
+.accessibleNav a {
+  padding: 8px 12px;
+  border: 1px solid #e6a2c4;
+  border-radius: 24px;
+  background: #fff6fa;
+  color: #a20c5e;
+  font: 600 12px/1.4 Arial, sans-serif;
+  text-decoration: none;
+}
+
+/* Page transition */
+.leaving {
+  opacity: .85;
+  transition: opacity .2s ease;
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .viewport {
+    min-height: 0;
+    align-items: flex-start;
+  }
+
+  .map {
+    width: 100%;
+    max-width: none;
+  }
+
+  .fallbackHouse {
+    border-width: 1px;
+  }
+
+  .fallbackHouse > span {
+    font-size: 20px;
+  }
+
+  .fallbackHouse strong {
+    font-size: 10px;
+  }
+
+  .accessibleNav {
+    padding: 0 12px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .house,
+  .house img,
+  .leaving {
+    transition: none;
+  }
+}

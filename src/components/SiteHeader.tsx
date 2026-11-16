@@ -44,7 +44,13 @@ export function SiteHeader() {
     };
   }, [pathname]);
 
-  if (pathname === '/universe' || pathname.startsWith('/universe/')) return null;
+  if (
+  pathname === '/' ||
+  pathname === '/universe' ||
+  pathname.startsWith('/universe/')
+) {
+  return null;
+}
 
   return (
     <header className="site-header" style={{padding:'18px max(18px, calc((100vw - 1120px) / 2))',background:'#fff',borderBottom:'1px solid #efdce8',fontFamily:'Montserrat, Arial, sans-serif'}}>
