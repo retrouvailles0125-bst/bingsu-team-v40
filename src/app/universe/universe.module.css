@@ -1,0 +1,315 @@
+
+/* BST UNIVERSE — Desktop + Mobile */
+
+.root {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(
+      ellipse at 15% 25%,
+      rgba(255, 177, 220, 0.38),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 85% 75%,
+      rgba(218, 193, 255, 0.42),
+      transparent 50%
+    ),
+    linear-gradient(
+      135deg,
+      #fff5fb 0%,
+      #f9e6f4 48%,
+      #f4eaff 100%
+    );
+}
+
+.viewport {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Desktop landscape map */
+.map {
+  position: relative;
+  flex: none;
+  width: min(100vw, calc(100dvh * 1672 / 941));
+  max-width: 100%;
+  aspect-ratio: 1672 / 941;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.fallbackMap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    135deg,
+    #f7b5d6,
+    #e91a86 55%,
+    #d77cbb
+  );
+}
+
+/* Interactive houses */
+.house {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+  translate: -50% -50%;
+  transform: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.house img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  transition:
+    transform 0.25s ease,
+    filter 0.25s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .house:hover {
+    z-index: 5;
+  }
+
+  .house:hover img {
+    transform: translateY(-3px);
+    filter:
+      brightness(1.08)
+      drop-shadow(0 5px 9px rgba(108, 0, 53, 0.22));
+  }
+}
+
+.house:focus-visible {
+  z-index: 5;
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.house:active img,
+.selected img {
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+}
+
+.house:disabled {
+  cursor: default;
+}
+
+/* Desktop house positions — initial layout */
+.treasury {
+  left: 21%;
+  top: 43%;
+  width: 19%;
+}
+
+.guild {
+  left: 43%;
+  top: 54%;
+  width: 20%;
+}
+
+.residence {
+  left: 76%;
+  top: 42%;
+  width: 17%;
+}
+
+.teahouse {
+  left: 29%;
+  top: 77%;
+  width: 18%;
+}
+
+.embassy {
+  left: 73%;
+  top: 76%;
+  width: 19%;
+}
+
+.fallbackHouse {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1.35;
+  border: 2px solid #8e1431;
+  border-radius: 12px;
+  background: #fff8ec;
+  color: #8e1431;
+  box-shadow: 0 3px 0 #740b2a33;
+}
+
+.fallbackHouse > span {
+  font-size: clamp(18px, 4vw, 36px);
+  line-height: 1.1;
+}
+
+.fallbackHouse strong {
+  padding: 4px 6px;
+  font: 700 clamp(10px, 2vw, 17px)/1.2 Arial, sans-serif;
+  text-align: center;
+}
+
+.leaving {
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+/* Mobile — preserve original vertical map */
+@media (max-width: 767px) {
+  .viewport {
+    min-height: 0;
+    align-items: flex-start;
+  }
+
+  .map {
+    width: 100%;
+    max-width: none;
+    aspect-ratio: 832 / 1797;
+  }
+
+  .treasury {
+    left: 70%;
+    top: 32%;
+    width: 38%;
+  }
+
+  .guild {
+    left: 29%;
+    top: 47%;
+    width: 44%;
+  }
+
+  .residence {
+    left: 76%;
+    top: 60%;
+    width: 32%;
+  }
+
+  .teahouse {
+    left: 24%;
+    top: 68%;
+    width: 38%;
+  }
+
+  .embassy {
+    left: 65%;
+    top: 86%;
+    width: 40%;
+  }
+
+  .fallbackHouse {
+    border-width: 1px;
+  }
+
+  .fallbackHouse > span {
+    font-size: 20px;
+  }
+
+  .fallbackHouse strong {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .house img,
+  .leaving {
+    transition: none;
+  }
+}
+
+/* BST Universe — isolate from global layout width constraints */
+
+.root {
+  position: relative;
+  display: block;
+  width: 100vw;
+  max-width: none;
+  min-width: 0;
+  margin-left: calc(50% - 50vw);
+  margin-right: 0;
+  padding: 0;
+}
+
+.viewport {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .map {
+    width: min(100vw, calc(100dvh * 1672 / 941));
+    max-width: none;
+  }
+}
+
+/* Desktop — full-width Universe artwork */
+@media (min-width: 768px) {
+  .root {
+    width: 100vw;
+    max-width: none;
+    margin-left: calc(50% - 50vw);
+    overflow-x: clip;
+  }
+
+  .viewport {
+    width: 100%;
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: visible;
+  }
+
+  .map {
+    flex: none;
+    width: 100vw;
+    max-width: none;
+    aspect-ratio: 1672 / 941;
+  }
+}
+/* Desktop — center Thương Hội */
+@media (min-width: 768px) {
+  .guild {
+    left: 50%;
+    top: 54%;
+  }
+}

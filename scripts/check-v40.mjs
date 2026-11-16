@@ -1,0 +1,28 @@
+import {readFileSync,existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const source=readFileSync('reference/v40-original.html','utf8');
+const expected=['THỐNG KÊ TỔNG QUAN','THEO DÕI DONATE','NGÔI SAO MAY MẮN','SÀN TRADE GIFT','YÊU THƯƠNG GỬI TRANG','TÀI KHOẢN CỦA TÔI','BINGSU TEAM'];
+const labels=[...source.matchAll(/<button data-tab="[^"]+">([^<]+)<\/button>/g)].map(x=>x[1]);
+const cfg=readFileSync('src/config/site.ts','utf8');
+const got=[...cfg.matchAll(/label: '([^']+)'/g)].map(x=>x[1]);
+if(JSON.stringify(labels)!==JSON.stringify(expected)) throw new Error('V40 navigation mismatch');
+if(JSON.stringify(got)!==JSON.stringify(expected)) throw new Error('Next navigation mismatch');
+if(!existsSync('src/styles/v40-original.css')) throw new Error('Missing original CSS');
+if(existsSync('public/reference')) throw new Error('Reference exposed under public');
+const routes=['src/app/tracking/page.tsx','src/app/star/page.tsx','src/app/trade/page.tsx','src/app/love/page.tsx','src/app/account/page.tsx','src/app/admin/page.tsx'];
+for(const route of routes){if(!existsSync(route))throw new Error('Missing V40 page route: '+route)}
+const onlineLove=readFileSync('src/features/love/LovePage.tsx','utf8');
+if(!onlineLove.includes('bst-v40-jar')||!onlineLove.includes("db.rpc('love_message_total')"))throw new Error('Love page lost message jar or live total');
+const onlineStar=readFileSync('src/features/star/StarPage.tsx','utf8');
+if(!onlineStar.includes('bst-v40-star-stage')||onlineStar.includes('segmented-wheel'))throw new Error('Star wishing stage regression');
+const admin=readFileSync('src/app/admin/page.tsx','utf8');
+if(!admin.includes('requireAdminAccess()'))throw new Error('Admin OTP gate missing');
+const tracking=readFileSync('src/app/tracking/VerifiedDonationTable.tsx','utf8');
+for(const token of ['tracking-search','tracking-project','tracking-sort'])if(!tracking.includes(token))throw new Error('Tracking filter missing: '+token);
+if(!onlineLove.includes('bst-v40-love-tabs')||!onlineLove.includes('bst-v40-love-letters'))throw new Error('Love inbox/write tabs missing');
+if(!admin.includes('bst-v40-admin-menu'))throw new Error('V40 admin grouped menu missing');
+const trade=readFileSync('src/features/trade/TradePage.tsx','utf8');
+for(const token of ['bst-v40-trade-stats','bst-v40-trade-filters','bst-v40-trade-cards'])if(!trade.includes(token))throw new Error('Trade marketplace missing: '+token);
+const hash=createHash('sha256').update(source).digest('hex');
+console.log('PASS: 7 V40 menus, 6 online routes, Love jar, star stage, admin OTP gate and private reference.');
+console.log('V40 SHA256:',hash);

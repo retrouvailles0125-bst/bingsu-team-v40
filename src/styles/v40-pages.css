@@ -1,0 +1,151 @@
+/* Shared V40 visual language for the Supabase-backed React pages.
+   Scope to .bst-v40-page so the original reference HTML is unaffected. */
+.bst-v40-page{max-width:1100px;margin:24px auto 64px;padding:0 18px;color:#30243b}
+.bst-v40-page .bst-v40-panel,.bst-v40-page>section{background:#fff;border:1px solid #efdce8;border-radius:20px;padding:23px;margin-bottom:18px;box-shadow:0 5px 24px #6b20500a}
+.bst-v40-page h1,.bst-v40-page h2{color:#e12589;letter-spacing:.01em}
+.bst-v40-page h1{font-size:clamp(23px,3.5vw,32px);margin:8px 0 16px;font-weight:800}
+.bst-v40-page h2{font-size:21px;margin:12px 0 16px}
+.bst-v40-page p{line-height:1.65}
+.bst-v40-page a{color:#98245f;font-weight:700}
+.bst-v40-page input:not([type=checkbox]):not([type=radio]):not([type=file]),.bst-v40-page select,.bst-v40-page textarea{border:1px solid #dbc9d5;border-radius:10px;padding:11px;background:#fff;color:#30243b;max-width:100%}
+.bst-v40-page button{border:0;border-radius:12px;padding:11px 16px;background:#e12589;color:#fff;font-weight:700;transition:transform .15s,box-shadow .15s}
+.bst-v40-page button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 7px 18px #e1258930}
+.bst-v40-page .bst-v40-metric{background:#fff6fb;border:1px solid #efdce8;border-radius:15px;padding:18px}
+.bst-v40-page .bst-v40-metric strong{color:#e12589;font-size:24px}
+.bst-v40-page .bst-v40-star-stage{position:relative;isolation:isolate;overflow:hidden;display:grid;place-items:center;width:min(380px,90%);aspect-ratio:1;margin:22px auto;border:10px solid #fff1fa;border-radius:50%;background:radial-gradient(circle at 45% 35%,#fff8ff 0%,#f6b4dc 35%,#ad4e9d 70%,#5d2a71 100%);box-shadow:0 0 0 2px #eab8d7,0 16px 35px #ae498c40,inset 0 0 30px #ffffff80;color:#fff;text-shadow:0 0 18px #fff;font-size:clamp(46px,8vw,75px)}
+.bst-v40-page .bst-v40-star-stage:before{content:'✧  ✦  ✧  ✶  ✦  ✧';position:absolute;inset:12%;border:1px dashed #ffffffa0;border-radius:50%;display:grid;place-items:start center;padding-top:20px;font-size:19px;letter-spacing:9px}
+.bst-v40-page .bst-v40-star-stage:after{content:'✦  ✧  ✦';position:absolute;bottom:15%;font-size:18px;letter-spacing:18px}
+.bst-v40-page .wish-anim{animation:bst-v40-wish 2s ease-in-out infinite}
+@keyframes bst-v40-wish{50%{filter:brightness(1.25);transform:scale(1.025)}}
+.bst-v40-page .bst-v40-jar{margin:22px auto;max-width:310px;min-height:240px;border:8px solid #f2b9d9;border-top:18px solid #d66da7;border-radius:45px 45px 95px 95px;background:radial-gradient(circle at 50% 25%,#fff,#ffe7f5 70%,#efb9e1);display:grid;place-items:center;box-shadow:inset 0 0 30px #ffffff,0 12px 35px #e1258920;text-align:center;color:#ad2c7a}
+.bst-v40-page .bst-v40-jar b{font-size:44px;display:block}
+@media(max-width:650px){.bst-v40-page{padding:0 12px}.bst-v40-page .bst-v40-panel,.bst-v40-page>section{padding:16px}}
+
+/* Respect users who prefer reduced motion while keeping the star-wish stage. */
+@media (prefers-reduced-motion:reduce){.bst-v40-page .wish-anim{animation:none}.bst-v40-page button{transition:none}.bst-v40-page button:not(:disabled):hover{transform:none}}
+
+/* Love letter jar — original V40-inspired layout, online data remains Supabase-backed. */
+.bst-v40-love-summary{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px auto 10px}
+.bst-v40-love-summary span{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid #eec4dd;border-radius:999px;background:#fff1f8;color:#9b4279;font-size:12px;font-weight:700}
+.bst-v40-love-summary strong{color:#e12589;font-size:21px}
+.bst-v40-love-decor{text-align:center;color:#e7a4cb;font-size:26px;letter-spacing:26px}
+.bst-v40-page .bst-v40-jar{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;max-width:240px;min-height:245px;margin:24px auto 30px;padding:28px 20px 18px;border:5px solid #f4b9da;border-top:0;border-radius:46px 46px 64px 64px;background:radial-gradient(ellipse at 35% 25%,#fff 0%,#ffe5f3 50%,#f2b2d7 100%);box-shadow:0 0 22px #e1258940,0 15px 28px #b73e8c30,inset 0 0 22px #fff}
+.bst-v40-page .bst-v40-jar-lid{position:absolute;top:-19px;left:4%;right:4%;padding:10px 4px;border:3px solid #aa7298;border-radius:14px;background:repeating-linear-gradient(90deg,#d7b2ce 0 7px,#f1d7e8 7px 13px);box-shadow:0 4px 8px #85467250;color:#b91f7d;font-size:11px;font-weight:800}
+.bst-v40-page .bst-v40-jar-hearts{font-size:25px;line-height:1.65;filter:drop-shadow(0 2px 2px #e1258928)}
+.bst-v40-page .bst-v40-jar-label{padding:9px 15px;border:2px solid #d78bb7;border-radius:9px;background:#fff5fb;color:#aa2e78;font-size:12px;font-weight:800;transform:rotate(-4deg);box-shadow:0 5px 10px #a95a8b24}
+.bst-v40-love-hint{text-align:center;font-size:12px;color:#877784;letter-spacing:.04em}
+@media(max-width:650px){.bst-v40-love-summary span{font-size:10px;padding:8px 10px}.bst-v40-love-decor{letter-spacing:15px}}
+
+/* V40 Trade marketplace */
+.bst-v40-trade-hero{text-align:center;padding:28px 16px;margin:16px 0 20px;border-radius:20px;background:radial-gradient(circle at 50% 0%,#ffe0f2,#fff7fb 70%);border:1px solid #f3d0e5}
+.bst-v40-trade-kicker{color:#ba4d92;letter-spacing:.17em;font-size:11px;font-weight:800}
+.bst-v40-trade-hero h1{margin:12px 0;color:#d51f86;font-size:clamp(26px,5vw,38px)}
+.bst-v40-trade-hero p{max-width:600px;margin:0 auto;color:#875c77}
+.bst-v40-trade-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.bst-v40-trade-stats>div{padding:17px 12px;border-radius:16px;border:1px solid #f0c8df;background:linear-gradient(140deg,#fff8fc,#ffedf7);text-align:center}
+.bst-v40-trade-stats small{display:block;color:#9a5b81;font-weight:800;font-size:11px}
+.bst-v40-trade-stats strong{display:block;margin-top:6px;color:#e12589;font-size:30px}
+.bst-v40-trade-tabs{display:flex;flex-wrap:wrap;gap:9px;margin:22px 0}
+.bst-v40-trade-create{padding:22px;border:1px solid #f1cde2;border-radius:18px;background:#fffafd}
+.bst-v40-trade-create label{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.bst-v40-trade-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bst-v40-trade-list-heading span{color:#a34a7c;font-weight:700}
+.bst-v40-trade-filters{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 22px}
+.bst-v40-trade-filters label{display:grid;gap:6px;flex:1;min-width:190px;font-size:12px;color:#8d5477;font-weight:800}
+.bst-v40-trade-filters input,.bst-v40-trade-filters select{width:100%}
+.bst-v40-trade-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.bst-v40-trade-card{padding:20px;border:1px solid #f0c5dc;border-radius:20px;background:linear-gradient(165deg,#fff,#fff6fb);box-shadow:0 7px 18px #ac3d7c0c}
+.bst-v40-trade-card-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.bst-v40-trade-card-head small{font-size:11px;color:#986984;letter-spacing:.05em}
+.bst-v40-trade-card-head strong{color:#d62287;font-size:13px}
+.bst-v40-trade-card-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:#ffe3f2;font-size:26px}
+.bst-v40-trade-empty{text-align:center;padding:38px 16px;border:1px dashed #e9b3d2;border-radius:18px;background:#fff8fc}
+.bst-v40-trade-empty span{font-size:44px}.bst-v40-trade-empty h3{color:#bb2e7b}
+@media(max-width:550px){.bst-v40-trade-stats{gap:6px}.bst-v40-trade-stats>div{padding:12px 6px}.bst-v40-trade-stats small{font-size:9px}.bst-v40-trade-stats strong{font-size:23px}.bst-v40-trade-create{padding:14px}}
+
+/* V40 original grouped admin navigation */
+.bst-v40-admin-menu{padding:20px 26px;border:2px solid #efc5dc;border-radius:24px;background:#fff1f8;color:#965474}
+.bst-v40-admin-menu>section{padding:20px 8px;border-bottom:2px solid #efc9df}
+.bst-v40-admin-menu>section:last-child{border-bottom:0}
+.bst-v40-admin-menu h2{font-size:clamp(17px,3vw,23px);letter-spacing:.06em;color:#a35481;margin:0 0 17px}
+.bst-v40-admin-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.bst-v40-admin-menu a{display:block;text-decoration:none;color:#92506f;font-weight:800;font-size:clamp(13px,2.3vw,19px);padding:14px 18px;border-radius:12px;transition:background .2s}
+.bst-v40-admin-menu a:hover,.bst-v40-admin-menu a:focus-visible{background:#fbd7eb;color:#b21871;outline-offset:2px}
+.bst-v40-admin-menu .bst-v40-admin-primary{display:inline-block;color:#fff;background:#e12589;padding:17px 25px;box-shadow:0 6px 14px #d91d8730}
+.bst-v40-admin-menu .bst-v40-admin-primary:hover{background:#bd1670;color:#fff}
+@media(max-width:600px){.bst-v40-admin-menu{padding:10px}.bst-v40-admin-menu>section{padding:16px 4px}.bst-v40-admin-menu-grid{grid-template-columns:1fr 1fr;gap:5px}.bst-v40-admin-menu a{padding:10px 6px;font-size:12px}}
+
+/* V40 public donation tracking */
+.bst-v40-tracking-hero{text-align:center;padding:28px 16px;margin:12px 0 20px;border:1px solid #f2c8df;border-radius:22px;background:radial-gradient(circle at 50% 0%,#ffe3f3,#fff8fc 75%)}
+.bst-v40-tracking-hero span{font-size:11px;letter-spacing:.17em;color:#a34a81;font-weight:800}
+.bst-v40-tracking-hero h1{color:#df258c;font-size:clamp(25px,5vw,38px);margin:12px 0}
+.bst-v40-tracking-hero p{color:#875b78}
+.bst-v40-tracking-history{margin-top:28px}
+.bst-v40-tracking-heading{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.bst-v40-tracking-heading h2{color:#c21e79}
+.bst-v40-tracking-heading span{color:#955679;font-weight:700}
+.bst-v40-tracking-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin:16px 0}
+.bst-v40-tracking-filters label{display:grid;gap:7px;font-size:12px;color:#975777;font-weight:800}
+.bst-v40-tracking-filters input,.bst-v40-tracking-filters select{width:100%;min-width:0;padding:10px;border:1px solid #e8b7d2;border-radius:10px;background:#fff}
+@media(max-width:650px){.bst-v40-tracking-filters{grid-template-columns:1fr 1fr}.bst-v40-tracking-filters label:first-child{grid-column:1/-1}}
+
+/* V40 love letter interactions */
+.bst-v40-love-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:22px auto}
+.bst-v40-love-compose{padding:24px;border:1px solid #f0c5df;border-radius:20px;background:linear-gradient(160deg,#fff9fd,#ffeef8)}
+.bst-v40-love-compose h2,.bst-v40-love-letters h2{color:#b92b7b;text-align:center}
+.bst-v40-love-letters{margin:24px auto}
+.bst-v40-love-letter{display:inline-block;vertical-align:top;width:calc(50% - 16px);margin:8px;padding:16px;border:1px solid #eec3da;border-radius:18px;background:linear-gradient(135deg,#fff,#fff0f8);box-shadow:0 8px 22px #ad3e7e10}
+.bst-v40-love-letter button{width:100%;text-align:left;white-space:normal}
+.bst-v40-love-empty{padding:32px;text-align:center;border:1px dashed #e9b3d2;border-radius:18px;background:#fff7fb;color:#a64b7e}
+@media(max-width:640px){.bst-v40-love-letter{width:100%;margin:8px 0}.bst-v40-love-compose{padding:15px}}
+
+/* V40 original message jar interaction and Trang access panel */
+.bst-v40-jar-button{display:block;margin:0 auto;padding:0;border:0;background:transparent;cursor:pointer;border-radius:32px}
+.bst-v40-jar-button:focus-visible{outline:3px solid #e12589;outline-offset:8px}
+.bst-v40-jar-button:disabled{cursor:default;opacity:.9}
+.bst-v40-jar-button:not(:disabled):hover .bst-v40-jar{transform:translateY(-5px) rotate(-2deg);transition:transform .25s}
+.bst-v40-trang-access{margin-top:28px;padding:22px;border:1px solid #edc5dd;border-radius:18px;background:#fff8fc}
+.bst-v40-trang-access h2{color:#ba2979;font-size:19px}
+.bst-v40-trang-pass-row{display:flex;gap:10px;flex-wrap:wrap}
+.bst-v40-trang-pass-row input{flex:1;min-width:170px;padding:12px;border:1px solid #e7b8d3;border-radius:12px}
+.bst-v40-trang-pass-row button:disabled{opacity:.6;cursor:not-allowed}
+
+/* BST ADMIN V40 — Apply original button styling to Next.js tab links */
+.admin-tabs a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  line-height: 1.3 !important;
+  font-weight: 600 !important;
+  letter-spacing: .012em !important;
+  padding: 10px 13px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #925675 !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+
+.admin-tabs a.selected,
+.admin-tabs a[aria-current="page"] {
+  background: linear-gradient(115deg, #e12589, #c92d91) !important;
+  color: #fff !important;
+  border-color: #e12589 !important;
+  box-shadow: 0 4px 11px #e125892c !important;
+}
+
+.admin-tabs a:focus-visible {
+  outline: 3px solid #f58ac2;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .admin-tabs a {
+    font-size: 10px !important;
+    padding: 9px !important;
+  }
+}

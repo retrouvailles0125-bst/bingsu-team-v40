@@ -1,0 +1,3 @@
+import Link from 'next/link';
+export const metadata={title:'Sứ Quán | BST Universe'};
+export default function Embassy(){return <main style={{minHeight:'75vh',display:'grid',placeItems:'center',padding:24,textAlign:'center',background:'#fff8fa',color:'#a10056'}}><section><p style={{letterSpacing:5}}>BST UNIVERSE</p><h1 style={{fontSize:'clamp(2rem,7vw,4rem)',margin:'12px 0'}}>SỨ QUÁN</h1><p>Không gian lưu giữ các Project đã thực hiện — đang được xây dựng.</p><Link href="/universe" style={{display:'inline-block',marginTop:24,padding:'12px 22px',borderRadius:30,background:'#e12589',color:'white',textDecoration:'none'}}>← QUAY LẠI KHU PHỐ</Link></section></main>}
