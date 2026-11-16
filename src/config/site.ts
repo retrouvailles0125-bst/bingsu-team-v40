@@ -7,7 +7,7 @@ export const site = {
   subtitle: 'Retrouvailles0125 x nlessliberty',
 
   nav: [
-    { label: 'THỐNG KÊ TỔNG QUAN', href: '/' },
+    { label: 'THỐNG KÊ TỔNG QUAN', href: '/home' },
     { label: 'THEO DÕI DONATE', href: '/tracking' },
     { label: 'NGÔI SAO MAY MẮN', href: '/star' },
     { label: 'SÀN TRADE GIFT', href: '/trade' },
