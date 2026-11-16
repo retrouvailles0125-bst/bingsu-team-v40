@@ -268,6 +268,38 @@ export default async function AdminPage({
       : null,
   ]);
 
+  // Bill chuyển khoản là dữ liệu riêng tư: chỉ tạo link ký sẵn
+  // (hết hạn sau 5 phút), không đưa đường dẫn lưu trữ thật ra trình duyệt.
+  type BillRow = { donation_id: string; storage_path: string };
+  let bills: { donation_id: string; name: string; url: string | null }[] = [];
+
+  if (section === 'donate-management') {
+    const donationIds = (donationsResult?.data ?? []).map(
+      (donation: { id: string }) => donation.id
+    );
+
+    if (donationIds.length > 0) {
+      const { data: billRows } = await db
+        .from('donation_bills')
+        .select('donation_id,storage_path')
+        .in('donation_id', donationIds);
+
+      bills = await Promise.all(
+        ((billRows ?? []) as BillRow[]).map(async (row) => {
+          const { data: signed } = await db.storage
+            .from('donation-bills')
+            .createSignedUrl(row.storage_path, 300);
+
+          return {
+            donation_id: row.donation_id,
+            name: row.storage_path.split('/').pop() || 'bill',
+            url: signed?.signedUrl ?? null,
+          };
+        })
+      );
+    }
+  }
+
   const unavailableSections = [
     'gift-transfers',
     'inventory-overview',
@@ -380,6 +412,7 @@ export default async function AdminPage({
             donations={donationsResult?.data ?? []}
             settings={settingsResult?.data ?? null}
             users={userNames?.data ?? []}
+            bills={bills}
             initialError={
               donationsResult?.error?.message ??
               settingsResult?.error?.message ??
