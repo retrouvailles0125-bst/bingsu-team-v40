@@ -49,49 +49,32 @@ export default function UniverseMap() {
   const router = useRouter();
 
   const [leaving, setLeaving] = useState(false);
-  const [selected, setSelected] = useState<HouseId | null>(
-    null
-  );
+  const [selected, setSelected] = useState<HouseId | null>(null);
 
-  const [loaded, setLoaded] = useState<
-    Record<string, boolean>
-  >({});
+  const [loaded, setLoaded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let active = true;
 
-    const assets = [
-      {
-        id: 'background',
-        src: '/universe/background.png',
-      },
-      ...houses.map((house) => ({
-        id: house.id,
-        src: house.image,
-      })),
-    ];
+    const assets = houses.map((house) => ({
+      id: house.id,
+      src: house.image,
+    }));
 
     assets.forEach((asset) => {
       const img = new window.Image();
 
-      img.onload = () => {
+      const markLoaded = (success: boolean) => {
         if (!active) return;
 
         setLoaded((previous) => ({
           ...previous,
-          [asset.id]: true,
+          [asset.id]: success,
         }));
       };
 
-      img.onerror = () => {
-        if (!active) return;
-
-        setLoaded((previous) => ({
-          ...previous,
-          [asset.id]: false,
-        }));
-      };
-
+      img.onload = () => markLoaded(true);
+      img.onerror = () => markLoaded(false);
       img.src = asset.src;
     });
 
@@ -133,38 +116,22 @@ export default function UniverseMap() {
             leaving ? styles.leaving : '',
           ].filter(Boolean).join(' ')}
         >
-          {/* Fallback background */}
-          <div
-            className={styles.fallbackMap}
-            aria-hidden="true"
-          >
-            <div className={styles.fallbackLogo}>
-              BST
-              <br />
-              UNIVERSE
+          <div className={styles.fallbackMap} aria-hidden="true" />
 
-              <small>ALL FOR TRANGPHAP</small>
-            </div>
-
-            <div className={styles.roadOne} />
-            <div className={styles.roadTwo} />
-            <div className={styles.roadThree} />
-          </div>
-
-          {/* Main artwork */}
-          {loaded.background && (
+          <picture>
+            <source
+              media="(min-width: 768px)"
+              srcSet="/universe/background-desktop.jpg"
+            />
             <img
               className={styles.background}
               src="/universe/background.png"
-              alt="Bản đồ BST Universe với các con đường màu hồng"
+              alt="Bản đồ BST Universe"
               draggable={false}
             />
-          )}
+          </picture>
 
-          {/* Interactive buildings */}
           {houses.map((house) => {
-            const houseClass = styles[house.id];
-
             const isSelected = selected === house.id;
 
             return (
@@ -173,14 +140,13 @@ export default function UniverseMap() {
                 key={house.id}
                 className={[
                   styles.house,
-                  houseClass,
+                  styles[house.id],
                   isSelected ? styles.selected : '',
                 ].filter(Boolean).join(' ')}
                 onClick={() => go(house.href, house.id)}
                 disabled={leaving}
-                aria-label={
-                  `${house.name} — ${house.description}`
-                }
+                aria-label={`${house.name} — ${house.description}`}
+                title={house.name}
               >
                 {loaded[house.id] ? (
                   <img
@@ -191,9 +157,7 @@ export default function UniverseMap() {
                 ) : (
                   <span className={styles.fallbackHouse}>
                     <span aria-hidden="true">⌂</span>
-                    <strong>
-                      {house.name.toUpperCase()}
-                    </strong>
+                    <strong>{house.name.toUpperCase()}</strong>
                   </span>
                 )}
               </button>
