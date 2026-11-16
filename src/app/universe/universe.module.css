@@ -28,6 +28,3 @@
 @media(max-width:520px){.root{padding:0}.accessibleNav{padding:0 12px}.fallbackHouse{border-width:1px}.fallbackHouse>span{font-size:20px}.fallbackHouse strong{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.house,.leaving{transition:none}}
 
-/* Only this landing route hides the global header; destination routes retain it. */
-:global(body:has(#bst-universe)) :global(.site-header){display:none!important}
-:global(body:has(#bst-universe)){margin:0!important;background:#e91a86!important}
