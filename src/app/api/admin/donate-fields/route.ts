@@ -34,6 +34,16 @@ const reservedKeys = new Set([
   'status',
 ]);
 
+// Cấu hình mặc định, tự tạo khi bảng chưa có dòng nào.
+const defaultFields = [
+  { key: 'display_id', label: 'ID HIỂN THỊ', type: 'text', visible: true, public: true, required: true, deleted: false, system: true },
+  { key: 'phone', label: 'SỐ ĐIỆN THOẠI', type: 'text', visible: true, public: false, required: false, deleted: false, system: true },
+  { key: 'amount', label: 'SỐ TIỀN DONATE', type: 'number', visible: true, public: true, required: true, deleted: false, system: true },
+  { key: 'transfer_date', label: 'NGÀY CHUYỂN KHOẢN', type: 'date', visible: true, public: false, required: false, deleted: false, system: true },
+  { key: 'kandee_message', label: 'LỜI NHẮN CHO CÁC BẠN KANDEE', type: 'textarea', visible: true, public: false, required: false, deleted: false, system: true },
+  { key: 'bst_message', label: 'LỜI NHẮN DÀNH CHO BINGSU TEAM', type: 'textarea', visible: true, public: false, required: false, deleted: false, system: true },
+];
+
 const fieldSchema = z.object({
   key: z.string().regex(/^[a-z][a-z0-9_]{0,63}$/),
   label: z.string().trim().min(1).max(120),
@@ -226,16 +236,61 @@ export async function GET() {
     .maybeSingle();
 
   if (error) {
+    console.error('[donate-fields] GET lỗi:', error.code, error.message);
     return NextResponse.json(
-      { error: 'Không đọc được cấu hình Donate.' },
+      { error: 'Không đọc được cấu hình Donate.', code: error.code ?? null },
       { status: 500 }
     );
   }
 
   if (!data) {
+    // Chưa có dòng cấu hình: tạo bản mặc định (chỉ admin ghi được nhờ RLS).
+    const { data: created, error: createError } = await supabase
+      .from('bst_donate_field_settings')
+      .insert({
+        id: true,
+        max_bills: 3,
+        fields: defaultFields,
+        updated_by: auth.userId,
+      })
+      .select('max_bills,fields,updated_at')
+      .single();
+
+    if (createError || !created) {
+      console.error(
+        '[donate-fields] GET tạo cấu hình mặc định lỗi:',
+        createError?.code,
+        createError?.message
+      );
+
+      // Nếu có request khác vừa tạo xong thì đọc lại.
+      if (createError?.code === '23505') {
+        const { data: again } = await supabase
+          .from('bst_donate_field_settings')
+          .select('max_bills,fields,updated_at')
+          .eq('id', true)
+          .maybeSingle();
+
+        if (again) {
+          return NextResponse.json(
+            { settings: again },
+            { headers: { 'Cache-Control': 'no-store' } }
+          );
+        }
+      }
+
+      return NextResponse.json(
+        {
+          error: 'Chưa khởi tạo cấu hình Donate.',
+          code: createError?.code ?? null,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Chưa khởi tạo cấu hình Donate.' },
-      { status: 404 }
+      { settings: created },
+      { headers: { 'Cache-Control': 'no-store' } }
     );
   }
 
@@ -287,6 +342,7 @@ export async function PUT(req: Request) {
     .maybeSingle();
 
   if (readError || !current) {
+    console.error('[donate-fields] PUT đọc cấu hình hiện tại lỗi:', readError?.code, readError?.message);
     return NextResponse.json(
       { error: 'Không đọc được cấu hình hiện tại.' },
       { status: 500 }
@@ -349,8 +405,9 @@ export async function PUT(req: Request) {
     .single();
 
   if (error || !data) {
+    console.error('[donate-fields] PUT lỗi:', error?.code, error?.message);
     return NextResponse.json(
-      { error: 'Không lưu được cấu hình Donate.' },
+      { error: 'Không lưu được cấu hình Donate.', code: error?.code ?? null },
       { status: 500 }
     );
   }
