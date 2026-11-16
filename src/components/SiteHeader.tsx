@@ -44,6 +44,8 @@ export function SiteHeader() {
     };
   }, [pathname]);
 
+  if (pathname === '/universe' || pathname.startsWith('/universe/')) return null;
+
   return (
     <header className="site-header" style={{padding:'18px max(18px, calc((100vw - 1120px) / 2))',background:'#fff',borderBottom:'1px solid #efdce8',fontFamily:'Montserrat, Arial, sans-serif'}}>
       <h1 style={{margin:0,fontSize:'clamp(24px, 4vw, 32px)',lineHeight:1.2,fontWeight:800,color:'#e12589'}}>{site.brand}</h1>
