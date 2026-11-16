@@ -1,7 +1,7 @@
 /* BST Universe: use the supplied map as the only final visual asset. */
-.root{min-height:100vh;width:100%;background:transparent;padding:24px 12px 48px}
+.root{min-height:100vh;width:100%;background:#e91a86;padding:0;overflow:hidden}
 .viewport{width:100%;display:flex;justify-content:center;overflow:visible}
-.map{position:relative;width:min(100%,660px);aspect-ratio:832/1797;isolation:isolate;overflow:visible}
+.map{position:relative;width:100%;max-width:1100px;aspect-ratio:832/1797;isolation:isolate;overflow:visible}
 .background{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:1;display:block}
 .fallbackMap{position:absolute;inset:0;background:#e91a86;overflow:hidden;z-index:0}
 .fallbackLogo{position:absolute;top:6%;left:0;right:0;text-align:center;font:normal clamp(28px,6vw,65px)/.85 Georgia,serif;letter-spacing:-2px;color:white}
@@ -22,8 +22,8 @@
 .fallbackHouse>span{font-size:clamp(18px,4vw,36px);line-height:1.1}
 .fallbackHouse strong{font:700 clamp(10px,2vw,17px)/1.2 Arial,sans-serif;padding:4px 6px;text-align:center}
 .tooltip{display:none}
-.accessibleNav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:660px;margin:12px auto 0}
+.accessibleNav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:1100px;margin:12px auto 0}
 .accessibleNav a{font:600 12px/1.4 Arial,sans-serif;text-decoration:none;color:#a20c5e;background:#fff6fa;border:1px solid #e6a2c4;border-radius:24px;padding:8px 12px}
 .leaving{opacity:.75;transition:opacity .2s ease}
-@media(max-width:520px){.root{padding:8px 0 28px}.accessibleNav{padding:0 12px}.fallbackHouse{border-width:1px}.fallbackHouse>span{font-size:20px}.fallbackHouse strong{font-size:10px}}
+@media(max-width:520px){.root{padding:0}.accessibleNav{padding:0 12px}.fallbackHouse{border-width:1px}.fallbackHouse>span{font-size:20px}.fallbackHouse strong{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.house,.leaving{transition:none}}
